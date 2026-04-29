@@ -1,0 +1,9 @@
+﻿asgiref==3.11.1
+Django==6.0.3
+django-autoslug==1.9.9
+django-environ==0.13.0
+django-tinymce==4.1.0
+psycopg2-binary==2.9.11
+sqlparse==0.5.5
+tzdata==2025.3
+Pillow==12.2.0

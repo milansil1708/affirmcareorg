@@ -1,0 +1,82 @@
+{% extends "pages/index.html" %}
+{% load static %}
+
+{% block page_title %}{{ blog.name }} | Blogs | Affirm Care{% endblock %}
+{% block meta_description %}{{ blog.description|striptags|truncatechars:160 }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pages/css/blogs.css' %}">
+{% endblock %}
+
+{% block content %}
+<section id="content">
+  <div class="content-wrap blog-detail-wrap">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 mb-5 mb-lg-0">
+          <article class="blog-detail-article">
+            {% if blog.main_image %}
+              <img src="{{ blog.main_image.url }}" alt="{{ blog.name }}" class="blog-detail-image">
+            {% else %}
+              <img src="{% static 'pages/images/slider/1.jpg' %}" alt="{{ blog.name }}" class="blog-detail-image">
+            {% endif %}
+
+            <h1 class="blog-detail-title">{{ blog.name }}</h1>
+            <div class="blog-detail-meta">
+              <span>
+                {% for category in blog.categories.all %}
+                  {{ category.name }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                  Uncategorized
+                {% endfor %}
+              </span>
+              <span>|</span>
+              <span>
+                {% if blog.published_at %}
+                  {{ blog.published_at|date:"j F, Y" }}
+                {% else %}
+                  {{ blog.created_at|date:"j F, Y" }}
+                {% endif %}
+              </span>
+            </div>
+
+            <div class="blog-detail-content">
+              {{ blog.description|safe }}
+            </div>
+          </article>
+        </div>
+
+        <aside class="col-lg-4">
+          <div class="blog-sidebar-section mb-4">
+            <h3>Categories</h3>
+            <ul class="blog-sidebar-list">
+              {% for category in categories %}
+                <li>
+                  <a href="{% url 'blogs' %}?category={{ category.slug }}">
+                    {{ category.name }} <span>({{ category.published_count }})</span>
+                  </a>
+                </li>
+              {% empty %}
+                <li class="text-muted">No categories available.</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <div class="blog-sidebar-section">
+            <h3>Recent Posts</h3>
+            <ul class="blog-sidebar-list">
+              {% for post in recent_posts %}
+                <li>
+                  <a href="{% url 'blog_detail' post.slug %}">{{ post.name }}</a>
+                </li>
+              {% empty %}
+                <li class="text-muted">No recent posts.</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

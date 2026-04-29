@@ -1,0 +1,160 @@
+{% extends "pages/index.html" %}
+{% load static %}
+
+{% block page_title %}{{ provider.name }} | Affirm Care{% endblock %}
+{% block meta_description %}View provider profile, services, location, and description for {{ provider.name }} on Affirm Care.{% endblock %}
+{% block og_title %}{{ provider.name }} | Affirm Care{% endblock %}
+{% block og_description %}Explore services and details for {{ provider.name }}.{% endblock %}
+{% block twitter_title %}{{ provider.name }} | Affirm Care{% endblock %}
+{% block twitter_description %}Provider profile for {{ provider.name }} on Affirm Care.{% endblock %}
+
+{% block extra_meta %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}">
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
+<link rel="stylesheet" href="{% static 'pages/css/home.css' %}">
+<link rel="stylesheet" href="{% static 'pages/css/provider_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<section id="content">
+  <div class="content-wrap provider-detail-wrap">
+    <div class="container clearfix">
+      <h2 class="provider-title">{{ provider.name }}</h2>
+      <span class="provider-type-badge">{{ provider.get_org_type_display }}</span>
+
+      <div class="provider-section-title"><span>Provider Summary</span></div>
+      <div class="row provider-summary-row">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+          <ul class="provider-summary-list">
+            <li>
+              <i class="fa-solid fa-briefcase-medical"></i>
+              {% for org_service in provider.services.all %}
+                {{ org_service.service.name }}{% if not forloop.last %}, {% endif %}
+              {% empty %}
+                Services not listed
+              {% endfor %}
+            </li>
+            {% if primary_location %}
+            <li>
+              <i class="fa-solid fa-location-dot"></i>
+              {{ primary_location.address_line1 }}{% if primary_location.address_line2 %}, {{ primary_location.address_line2 }}{% endif %}, {{ primary_location.city }}, {{ primary_location.state_code }} {{ primary_location.zip_code }}
+            </li>
+            {% endif %}
+            {% if offers_telehealth %}
+            <li>
+              <i class="fa-solid fa-circle-check"></i>
+              Offers Telehealth
+            </li>
+            {% endif %}
+            {% if provider.phone %}
+            <li>
+              <i class="fa-solid fa-phone"></i>
+              <a href="tel:{{ provider.phone|cut:'-'|cut:' '|cut:'('|cut:')' }}">{{ provider.phone }}</a>
+            </li>
+            {% endif %}
+            {% if provider.email %}
+            <li>
+              <i class="fa-solid fa-envelope"></i>
+              <a href="mailto:{{ provider.email }}">{{ provider.email }}</a>
+            </li>
+            {% endif %}
+            {% if provider.website_url %}
+            <li>
+              <i class="fa-solid fa-globe"></i>
+              <a href="{{ provider.website_url }}" target="_blank" rel="noopener noreferrer">Website</a>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+        <div class="col-lg-6">
+          <div class="map-card">
+            {% if map_embed_url %}
+            <iframe
+              title="Provider Location Map"
+              class="map-embed"
+              src="{{ map_embed_url }}"
+              width="100%"
+              style="border:0;"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+            {% else %}
+            <div class="map-empty">Location map unavailable for this provider.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="provider-section-title mt-5"><span>Provider Description</span></div>
+      <div class="provider-description-content">
+        {{ provider.description|safe }}
+      </div>
+
+      {% if similar_providers %}
+      <div class="provider-section-title mt-5"><span>Similar Providers</span></div>
+      <div class="featured-carousel-wrap">
+        <div class="owl-carousel similar-providers-carousel">
+          {% for similar in similar_providers %}
+          <div class="item">
+            <a href="{% url 'provider_detail' similar.slug %}" class="provider-card-link">
+              <div class="search-result-card featured-provider-card">
+                <h4 class="search-result-title">{{ similar.name }}</h4>
+                <p class="search-result-services">
+                  {% for org_service in similar.services.all %}
+                    {{ org_service.service.name }}{% if not forloop.last %}, {% endif %}
+                  {% empty %}
+                    Services not listed
+                  {% endfor %}
+                </p>
+                {% if similar.locations.first %}
+                <p class="search-result-meta">
+                  <i class="fa-solid fa-location-dot"></i>{{ similar.locations.first.city }}, {{ similar.locations.first.state_code }}
+                </p>
+                {% endif %}
+                {% if similar.phone %}
+                <p class="search-result-meta mb-0">
+                  <i class="fa-solid fa-phone"></i>{{ similar.phone }}
+                </p>
+                {% endif %}
+              </div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+<script>
+$(function () {
+  var $similarCarousel = $(".similar-providers-carousel");
+  if ($similarCarousel.length) {
+    $similarCarousel.owlCarousel({
+      loop: true,
+      margin: 22,
+      nav: true,
+      dots: false,
+      autoplay: false,
+      navText: [
+        '<span aria-label="Previous"><i class="fa-solid fa-chevron-left"></i></span>',
+        '<span aria-label="Next"><i class="fa-solid fa-chevron-right"></i></span>'
+      ],
+      responsive: {
+        0: { items: 1 },
+        768: { items: 2 },
+        1024: { items: 3 }
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

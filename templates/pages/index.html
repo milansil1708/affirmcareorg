@@ -1,0 +1,175 @@
+{% load static %}
+<!DOCTYPE html>
+<html dir="ltr" lang="en-US">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <meta name="author" content="Affirm Care" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>{% block page_title %}Affirm Care{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Find and compare gender-affirming healthcare providers by state and services.{% endblock %}">
+  <meta name="robots" content="index,follow">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{% block og_title %}Affirm Care | Gender-Affirming Provider Search{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Search trusted gender-affirming providers, services, and locations.{% endblock %}">
+  <meta property="og:image" content="{% static 'pages/images/logo.png' %}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{% block twitter_title %}Affirm Care | Gender-Affirming Provider Search{% endblock %}">
+  <meta name="twitter:description" content="{% block twitter_description %}Find LGBTQ+ and TGI-affirming care with clarity and confidence.{% endblock %}">
+  {% block extra_meta %}{% endblock %}
+
+  <link href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700|Raleway:300,400,500,600,700|Crete+Round:400i" rel="stylesheet" type="text/css" />
+  <link rel="stylesheet" href="{% static 'pages/css/bootstrap.css' %}">
+  <link rel="stylesheet" href="{% static 'pages/css/swiper.css' %}">
+  <link rel="stylesheet" href="{% static 'pages/css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'pages/css/dark.css' %}" />
+  <link rel="stylesheet" href="{% static 'pages/css/font-icons.css' %}" />
+  <link rel="stylesheet" href="{% static 'pages/css/animate.css' %}" />
+  <link rel="stylesheet" href="{% static 'pages/css/magnific-popup.css' %}" />
+  <link rel="stylesheet" href="{% static 'pages/css/responsive.css' %}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    #header.full-header #logo {
+      border-right: none;
+      padding-right: 0;
+      margin-right: 24px;
+    }
+
+    #logo a.affirmcare-logo {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: "Raleway", sans-serif;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: none;
+      line-height: 1;
+      padding: 28px 0;
+      font-size: 30px;
+    }
+
+    #logo a.standard-logo.affirmcare-logo {
+      display: flex;
+    }
+
+    #logo a.retina-logo.affirmcare-logo {
+      display: none;
+    }
+
+    #logo .affirmcare-logo-main {
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+    }
+
+    #logo .affirmcare-logo-accent {
+      color: #2cb9a4;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+    }
+
+    .sticky-header #logo .affirmcare-logo-main {
+      color: #0a2f2a;
+      text-shadow: none;
+    }
+
+    .sticky-header #logo .affirmcare-logo-accent {
+      color: #0a7a6f;
+      text-shadow: none;
+    }
+
+    @media (max-width: 767px) {
+      #logo a.affirmcare-logo {
+        font-size: 24px;
+        padding: 24px 0;
+      }
+    }
+
+    @media only screen and (-webkit-min-device-pixel-ratio: 2),
+      only screen and (min-resolution: 192dpi),
+      only screen and (min-resolution: 2dppx) {
+      #logo a.standard-logo.affirmcare-logo {
+        display: none;
+      }
+
+      #logo a.retina-logo.affirmcare-logo {
+        display: flex;
+      }
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="stretched">
+  <div id="wrapper" class="clearfix">
+   <header id="header" class="transparent-header full-header" data-sticky-class="not-dark">
+
+			<div id="header-wrap">
+
+				<div class="container clearfix">
+
+					<div id="primary-menu-trigger"><i class="icon-reorder"></i></div>
+
+					<!-- Logo
+					============================================= -->
+					<div id="logo">
+                        <a href="{% url 'home' %}" class="standard-logo affirmcare-logo" aria-label="Affirm Care home">
+                            <span class="affirmcare-logo-main">Affirm</span>
+                            <span class="affirmcare-logo-accent">Care</span>
+                        </a>
+                        <a href="{% url 'home' %}" class="retina-logo affirmcare-logo" aria-label="Affirm Care home">
+                            <span class="affirmcare-logo-main">Affirm</span>
+                            <span class="affirmcare-logo-accent">Care</span>
+                        </a>
+                    </div><!-- #logo end -->
+
+					<!-- Primary Navigation
+					============================================= -->
+					<nav id="primary-menu" class="dark">
+
+						<ul>
+							<li class="current"><a href="{% url 'home' %}"><div>Home</div></a>
+							</li>
+							<li><a href="{% url 'blogs' %}"><div>Blogs</div></a>
+							</li>
+						</ul>
+
+						<!-- Top Search
+						============================================= -->
+						<div id="top-search">
+							<a href="{% url 'home' %}#provider-search" aria-label="Go to provider search"><i class="icon-search3"></i></a>
+							<form action="{% url 'home' %}#provider-search" method="get">
+								<input type="text" name="keyword" class="form-control" value="" placeholder="Search providers...">
+							</form>
+						</div><!-- #top-search end -->
+
+					</nav><!-- #primary-menu end -->
+
+				</div>
+
+			</div>
+
+		</header><!-- #header end -->
+
+
+    {% block content %}{% endblock %}
+
+    <footer id="footer" class="dark">
+      <div id="copyrights">
+        <div class="container clearfix">
+          <div class="col_half">
+            Copyrights &copy; {% now "Y" %} Affirm Care.
+          </div>
+          <div class="col_half col_last tright">
+            <i class="icon-envelope2"></i> hello@affirmcare.org
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <div id="gotoTop" class="icon-angle-up"></div>
+
+  <script src="{% static 'pages/js/jquery.js' %}"></script>
+  <script src="{% static 'pages/js/plugins.js' %}"></script>
+  <script src="{% static 'pages/js/functions.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

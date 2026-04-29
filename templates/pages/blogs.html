@@ -1,0 +1,72 @@
+{% extends "pages/index.html" %}
+{% load static %}
+
+{% block page_title %}Blogs | Affirm Care{% endblock %}
+{% block meta_description %}Read LGBTQ+ health insights, affirming care updates, and community-focused articles from Affirm Care.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pages/css/blogs.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="blog-hero-section">
+  <div class="blog-hero-overlay">
+    <div class="container text-center">
+      <h1>OutPosts LGBTQ+ Health Blog</h1>
+      <div class="hero-divider"></div>
+      <p>Stay informed and up-to-date on LGBTQ+ health news, community priorities, and affirming care insights.</p>
+    </div>
+  </div>
+</section>
+
+<section id="content">
+  <div class="content-wrap blog-list-wrap">
+    <div class="container">
+      <div class="blog-filter-row mb-4">
+        <a href="{% url 'blogs' %}" class="blog-filter-pill {% if not selected_category %}active{% endif %}">All</a>
+        {% for category in categories %}
+          <a href="{% url 'blogs' %}?category={{ category.slug }}" class="blog-filter-pill {% if selected_category == category.slug %}active{% endif %}">
+            {{ category.name }}
+          </a>
+        {% endfor %}
+      </div>
+
+      <div class="row">
+        {% for post in blogs %}
+          <div class="col-md-6 col-lg-4 mb-4">
+            <article class="blog-card">
+              <a href="{% url 'blog_detail' post.slug %}" class="blog-card-image-link">
+                {% if post.main_image %}
+                  <img src="{{ post.main_image.url }}" alt="{{ post.name }}" class="blog-card-image">
+                {% else %}
+                  <img src="{% static 'pages/images/slider/1.jpg' %}" alt="{{ post.name }}" class="blog-card-image">
+                {% endif %}
+              </a>
+              <div class="blog-card-body">
+                <h3 class="blog-card-title">
+                  <a href="{% url 'blog_detail' post.slug %}">{{ post.name }}</a>
+                </h3>
+                <div class="blog-card-meta">
+                  <span>
+                    {% for category in post.categories.all %}
+                      {{ category.name }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                      Uncategorized
+                    {% endfor %}
+                  </span>
+                </div>
+                <p class="blog-card-excerpt">{{ post.description|striptags|truncatewords:24 }}</p>
+                <a href="{% url 'blog_detail' post.slug %}" class="blog-read-more">Read more</a>
+              </div>
+            </article>
+          </div>
+        {% empty %}
+          <div class="col-12">
+            <p class="text-center text-muted">No blog posts found.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,51 @@
+SEED_DATA = {
+    "BlogCategory": [
+        {"name": "Health & Wellness"},
+        {"name": "Lifestyle"},
+        {"name": "Education"},
+        {"name": "Research"},
+        {"name": "Community"},
+    ],
+    "Blog": [
+        {
+            "name": "Supporting LGBTQ+ Patients Through Anxiety Without Making Assumptions",
+            "description": "<p>Anxiety does not always show up with obvious signs. For LGBTQ+ patients, it can be amplified by fear of being misunderstood during care. Starting each encounter with inclusive language, clear expectations, and consent-based communication can reduce stress and build trust.</p><p>Small changes matter: ask how a person wants to be addressed, avoid assumptions about identity or relationships, and explain each step of care before proceeding. These practices help patients feel safer, heard, and respected.</p>",
+            "likes_count": 7,
+            "is_published": True,
+            "published_at": "2026-03-06T10:00:00Z",
+            "categories": ["health-wellness", "lifestyle"],
+        },
+        {
+            "name": "How Trauma-Informed Care Can Better Support LGBTQ+ Communities",
+            "description": "<p>Trauma-informed care recognizes that many patients carry past experiences that can affect medical visits. LGBTQ+ communities may face additional barriers, including discrimination and delayed care, which makes predictable and respectful care environments essential.</p><p>Use collaborative care planning, transparent communication, and patient choice whenever possible. These steps can increase follow-through, reduce fear, and improve health outcomes over time.</p>",
+            "likes_count": 5,
+            "is_published": True,
+            "published_at": "2026-03-10T09:30:00Z",
+            "categories": ["health-wellness", "education"],
+        },
+        {
+            "name": "Coping With Minority Stress: Mental Health Tools for LGBTQ+ Adults",
+            "description": "<p>Minority stress can affect sleep, concentration, mood, and physical health. Having practical support tools can make day-to-day challenges more manageable.</p><p>Helpful strategies include grounding techniques, values-based routines, affirming social support, and culturally responsive therapy. Care teams can reinforce these tools by validating experiences and connecting patients to affirming resources.</p>",
+            "likes_count": 6,
+            "is_published": True,
+            "published_at": "2026-03-14T08:45:00Z",
+            "categories": ["health-wellness", "community"],
+        },
+        {
+            "name": "Building Inclusive Clinic Workflows for Gender-Affirming Care",
+            "description": "<p>Inclusive workflows begin before a patient reaches the exam room. Intake forms, call scripts, portal settings, and staff training all shape whether care feels safe and affirming.</p><p>Teams can improve consistency by standardizing chosen-name use, pronoun collection, and referral pathways for gender-affirming services. Clear workflows reduce errors and improve patient confidence in care delivery.</p>",
+            "likes_count": 4,
+            "is_published": True,
+            "published_at": "2026-03-18T11:15:00Z",
+            "categories": ["education", "research"],
+        },
+        {
+            "name": "Telehealth Access for LGBTQ+ Patients: What Providers Should Prioritize",
+            "description": "<p>Telehealth can remove transportation and geography barriers, but it must be implemented thoughtfully to remain equitable and affirming. Privacy, accessibility, and continuity are central concerns.</p><p>Providers should prioritize secure communication, clear follow-up plans, and easy referral coordination for labs, imaging, and specialty care. When done well, telehealth can broaden access while preserving quality and trust.</p>",
+            "likes_count": 3,
+            "is_published": True,
+            "published_at": "2026-03-22T14:00:00Z",
+            "categories": ["lifestyle", "community"],
+        },
+    ],
+}
