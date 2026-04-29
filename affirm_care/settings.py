@@ -24,7 +24,7 @@ environ.Env.read_env(os.path.join(Path(__file__).resolve().parent, '.env'))
 DEBUG = env.bool("DEBUG", default=True)
 SECRET_KEY = env("SECRET_KEY")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
 
 # Application definition
