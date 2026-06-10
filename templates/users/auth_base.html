@@ -1,0 +1,71 @@
+{% load static %}
+<!DOCTYPE html>
+<html dir="ltr" lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block page_title %}Account{% endblock %} | Affirm Care</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700|Raleway:400,500,600,700,800" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="{% static 'pages/css/bootstrap.css' %}">
+  <link rel="stylesheet" href="{% static 'pages/css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'users/css/auth.css' %}">
+</head>
+<body class="auth-page">
+  <main class="container-fluid">
+    <div class="row auth-layout">
+      <section class="col-lg-8 d-none d-lg-flex auth-visual" aria-label="Affirm Care">
+        <a href="{% url 'home' %}" class="auth-brand">
+          <span>Affirm</span><strong>Care</strong>
+        </a>
+        <div class="auth-visual-copy">
+          <p class="auth-eyebrow">Care without compromise</p>
+          <h1>Connect with affirming healthcare.</h1>
+          <p>Manage your provider presence and help people find care with confidence.</p>
+        </div>
+      </section>
+
+      <section class="col-12 col-lg-4 auth-panel">
+        <div class="auth-form-wrap">
+          <a href="{% url 'home' %}" class="auth-mobile-brand d-lg-none">
+            <span>Affirm</span><strong>Care</strong>
+          </a>
+          {% block auth_content %}{% endblock %}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  {% if messages %}
+    <div class="auth-toast-container" aria-live="polite" aria-atomic="true">
+      {% for message in messages %}
+        <div
+          class="toast auth-toast {% if message.tags == 'success' %}auth-toast-success{% else %}auth-toast-error{% endif %}"
+          role="alert"
+          data-delay="5000"
+        >
+          <div class="toast-header">
+            <strong class="mr-auto">
+              {% if message.tags == "success" %}Success{% else %}Error{% endif %}
+            </strong>
+            <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="toast-body">{{ message }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <script src="{% static 'pages/js/jquery.js' %}"></script>
+  <script src="{% static 'pages/js/plugins.js' %}"></script>
+  {% if messages %}
+    <script>
+      jQuery(function ($) {
+        $(".auth-toast").toast("show");
+      });
+    </script>
+  {% endif %}
+</body>
+</html>

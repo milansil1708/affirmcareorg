@@ -1,0 +1,408 @@
+{% extends "pages/index.html" %}
+{% load static %}
+
+{% block page_title %}Provider Account | Affirm Care{% endblock %}
+{% block meta_description %}Complete and maintain your provider organization profile on Affirm Care.{% endblock %}
+{% block header_class %}account-header-light{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'provider_organizations/css/account.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="account-hero">
+  <div class="container">
+    <p class="account-eyebrow">Provider account</p>
+    <h1>{% if is_complete %}Manage your organization{% else %}Complete your provider profile{% endif %}</h1>
+    <p>
+      {% if is_complete %}
+        Review and update each section whenever your provider information changes.
+      {% else %}
+        Complete all four sections so patients can find accurate, useful information.
+      {% endif %}
+    </p>
+  </div>
+</section>
+
+<section id="content" class="account-content">
+  <div class="container">
+    <div class="wizard-shell">
+      <aside class="wizard-sidebar" aria-label="Provider account sections">
+        <div class="wizard-sidebar-heading">
+          <span>{% if is_complete %}Account settings{% else %}Profile setup{% endif %}</span>
+          {% if is_complete %}
+            <strong><i class="fa-solid fa-circle-check"></i> Complete</strong>
+          {% else %}
+            <strong>Step {{ step_number }} of {{ step_count }}</strong>
+          {% endif %}
+        </div>
+
+        <nav class="wizard-nav">
+          {% for item in steps %}
+            {% if item.available %}
+              <a
+                href="{% url 'provider_account' %}?step={{ item.key }}"
+                class="wizard-nav-item{% if item.active %} active{% endif %}{% if item.complete %} complete{% endif %}"
+              >
+            {% else %}
+              <span class="wizard-nav-item disabled">
+            {% endif %}
+                <span class="wizard-nav-icon">
+                  {% if item.key == "organization" %}
+                    <i class="fa-regular fa-building"></i>
+                  {% elif item.key == "location" %}
+                    <i class="fa-solid fa-location-dot"></i>
+                  {% elif item.key == "services" %}
+                    <i class="fa-solid fa-briefcase-medical"></i>
+                  {% else %}
+                    <i class="fa-solid fa-shield-heart"></i>
+                  {% endif %}
+                </span>
+                <span class="wizard-nav-copy">
+                  <strong>{{ item.title }}</strong>
+                  <small>{{ item.subtitle }}</small>
+                </span>
+                {% if item.complete %}
+                  <i class="fa-solid fa-circle-check wizard-check"></i>
+                {% endif %}
+            {% if item.available %}
+              </a>
+            {% else %}
+              </span>
+            {% endif %}
+          {% endfor %}
+        </nav>
+      </aside>
+
+      <div class="wizard-panel">
+        <div class="wizard-panel-heading">
+          <div>
+            <span class="account-step">
+              {% if is_complete %}Account section{% else %}Step {{ step_number }} of {{ step_count }}{% endif %}
+            </span>
+            {% if active_step == "organization" %}
+              <h2>Provider information</h2>
+              <p>Tell patients who you are and how they can reach you.</p>
+            {% elif active_step == "location" %}
+              <h2>Provider location</h2>
+              <p>Add your primary location and accessibility information.</p>
+            {% elif active_step == "services" %}
+              <h2>Services offered</h2>
+              <p>Add one or more services with delivery and age details.</p>
+            {% else %}
+              <h2>Affirming features</h2>
+              <p>Select the inclusive facilities and practices your organization provides.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <form method="post" novalidate class="wizard-form">
+          {% csrf_token %}
+          <input type="hidden" name="step" value="{{ active_step }}">
+
+          {% if active_step == "organization" %}
+            <div class="wizard-form-body">
+              <div class="row">
+                <div class="col-md-7">
+                  <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+                    {{ form.name }}
+                    {% for error in form.name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                  </div>
+                </div>
+                <div class="col-md-5">
+                  <div class="form-group">
+                    <label for="{{ form.org_type.id_for_label }}">{{ form.org_type.label }}</label>
+                    {{ form.org_type }}
+                    {% for error in form.org_type.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+                {{ form.description }}
+                <small class="form-text text-muted">Include your approach, specialties, and what patients can expect.</small>
+                {% for error in form.description.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+              </div>
+
+              <div class="wizard-section-divider"><span>Contact and booking</span></div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>
+                    {{ form.phone }}
+                    {% for error in form.phone.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                    {{ form.email }}
+                    {% for error in form.email.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.website_url.id_for_label }}">{{ form.website_url.label }}</label>
+                    {{ form.website_url }}
+                    {% for error in form.website_url.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.booking_url.id_for_label }}">{{ form.booking_url.label }}</label>
+                    {{ form.booking_url }}
+                    {% for error in form.booking_url.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          {% elif active_step == "location" %}
+            <div class="wizard-form-body">
+              <div class="form-group">
+                <label for="{{ form.address_line1.id_for_label }}">{{ form.address_line1.label }}</label>
+                {{ form.address_line1 }}
+                {% for error in form.address_line1.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+              </div>
+              <div class="form-group">
+                <label for="{{ form.address_line2.id_for_label }}">{{ form.address_line2.label }}</label>
+                {{ form.address_line2 }}
+                {% for error in form.address_line2.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+              </div>
+              <div class="row">
+                <div class="col-md-5">
+                  <div class="form-group">
+                    <label for="{{ form.city.id_for_label }}">{{ form.city.label }}</label>
+                    {{ form.city }}
+                    {% for error in form.city.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="{{ form.state_code.id_for_label }}">{{ form.state_code.label }}</label>
+                    {{ form.state_code }}
+                    {% for error in form.state_code.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="{{ form.zip_code.id_for_label }}">{{ form.zip_code.label }}</label>
+                    {{ form.zip_code }}
+                    {% for error in form.zip_code.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                  </div>
+                </div>
+              </div>
+
+              <div class="wizard-section-divider"><span>Accessibility</span></div>
+              <div class="accessibility-grid">
+                {% for field in form %}
+                  {% if field.name == "wheelchair_accessible" or field.name == "gender_neutral_restrooms" or field.name == "public_transit_notes" %}
+                    <label class="accessibility-option" for="{{ field.id_for_label }}">
+                      {{ field }}
+                      <span class="accessibility-checkmark" aria-hidden="true">
+                        <i class="fa-solid fa-check"></i>
+                      </span>
+                      <span>
+                        <strong>{{ field.label }}</strong>
+                        <small>Mark this option if it is available at your primary location.</small>
+                      </span>
+                    </label>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+
+          {% elif active_step == "services" %}
+            <div class="wizard-form-body">
+              {{ service_formset.management_form }}
+              {% for error in service_formset.non_form_errors %}
+                <div class="alert alert-danger">{{ error }}</div>
+              {% endfor %}
+
+              <div id="service-form-list">
+                {% for service_form in service_formset %}
+                  <div class="service-form-row">
+                    {% for hidden in service_form.hidden_fields %}{{ hidden }}{% endfor %}
+                    <div class="service-row-grid">
+                      <div class="form-group">
+                        <label for="{{ service_form.service.id_for_label }}">Service</label>
+                        {{ service_form.service }}
+                        {% for error in service_form.service.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                      </div>
+                      <div class="form-group">
+                        <label for="{{ service_form.delivery_mode.id_for_label }}">{{ service_form.delivery_mode.label }}</label>
+                        {{ service_form.delivery_mode }}
+                        {% for error in service_form.delivery_mode.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                      </div>
+                      <div class="form-group">
+                        <label for="{{ service_form.age_group.id_for_label }}">{{ service_form.age_group.label }}</label>
+                        {{ service_form.age_group }}
+                        {% for error in service_form.age_group.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                      </div>
+                    </div>
+                    <div class="service-note-row">
+                      <div class="form-group mb-0">
+                        <label for="{{ service_form.note.id_for_label }}">Note</label>
+                        {{ service_form.note }}
+                        {% for error in service_form.note.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                      </div>
+                      {% if service_formset.can_delete %}
+                        <label class="service-delete">
+                          {{ service_form.DELETE }}
+                          <span><i class="fa-regular fa-trash-can"></i> Remove</span>
+                        </label>
+                      {% endif %}
+                    </div>
+                    {% for error in service_form.non_field_errors %}
+                      <div class="invalid-feedback d-block">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                {% endfor %}
+              </div>
+
+              <button type="button" class="add-service-button" id="add-service">
+                <i class="fa-solid fa-plus"></i> Add another service
+              </button>
+
+              <template id="empty-service-form">
+                <div class="service-form-row">
+                  {% with service_form=service_formset.empty_form %}
+                    {% for hidden in service_form.hidden_fields %}{{ hidden }}{% endfor %}
+                    <div class="service-row-grid">
+                      <div class="form-group">
+                        <label for="{{ service_form.service.id_for_label }}">Service</label>
+                        {{ service_form.service }}
+                      </div>
+                      <div class="form-group">
+                        <label for="{{ service_form.delivery_mode.id_for_label }}">{{ service_form.delivery_mode.label }}</label>
+                        {{ service_form.delivery_mode }}
+                      </div>
+                      <div class="form-group">
+                        <label for="{{ service_form.age_group.id_for_label }}">{{ service_form.age_group.label }}</label>
+                        {{ service_form.age_group }}
+                      </div>
+                    </div>
+                    <div class="service-note-row">
+                      <div class="form-group mb-0">
+                        <label for="{{ service_form.note.id_for_label }}">Note</label>
+                        {{ service_form.note }}
+                      </div>
+                      <label class="service-delete">
+                        {{ service_form.DELETE }}
+                        <span><i class="fa-regular fa-trash-can"></i> Remove</span>
+                      </label>
+                    </div>
+                  {% endwith %}
+                </div>
+              </template>
+            </div>
+
+          {% else %}
+            <div class="wizard-form-body">
+              <div class="feature-intro">
+                <i class="fa-solid fa-shield-heart"></i>
+                <div>
+                  <strong>Select at least one affirming feature</strong>
+                  <p>{{ form.features.help_text }}</p>
+                </div>
+              </div>
+              <div class="feature-grid">
+                {% for checkbox in form.features %}
+                  <label class="feature-option" for="{{ checkbox.id_for_label }}">
+                    {{ checkbox.tag }}
+                    <span class="feature-checkmark"><i class="fa-solid fa-check"></i></span>
+                    <span>{{ checkbox.choice_label }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+              {% for error in form.features.errors %}
+                <div class="invalid-feedback d-block mt-3">{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          {% if form %}
+            {% for error in form.non_field_errors %}
+              <div class="alert alert-danger mx-4">{{ error }}</div>
+            {% endfor %}
+          {% endif %}
+
+          <div class="wizard-actions">
+            <div>
+              {% if previous_step %}
+                <a href="{% url 'provider_account' %}?step={{ previous_step }}" class="wizard-back">
+                  <i class="fa-solid fa-arrow-left"></i> Back
+                </a>
+              {% endif %}
+            </div>
+            <button type="submit" class="button button-3d button-rounded account-save">
+              {% if is_complete %}
+                Save changes
+              {% elif active_step == "features" %}
+                Finish setup
+              {% else %}
+                Save and continue <i class="fa-solid fa-arrow-right"></i>
+              {% endif %}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if messages %}
+  <div class="account-toast-container" aria-live="polite" aria-atomic="true">
+    {% for message in messages %}
+      <div
+        class="toast account-toast {% if message.tags == 'success' %}account-toast-success{% else %}account-toast-error{% endif %}"
+        role="alert"
+        data-delay="5000"
+      >
+        <div class="account-toast-content">
+          <span class="account-toast-icon">
+            {% if message.tags == "success" %}
+              <i class="fa-solid fa-check"></i>
+            {% else %}
+              <i class="fa-solid fa-exclamation"></i>
+            {% endif %}
+          </span>
+          <div class="account-toast-copy">
+            <strong>{% if message.tags == "success" %}Changes saved{% else %}Unable to save{% endif %}</strong>
+            <p>{{ message }}</p>
+          </div>
+          <button type="button" class="account-toast-close" data-dismiss="toast" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <span class="account-toast-progress" aria-hidden="true"></span>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+jQuery(function ($) {
+  $(".account-toast").toast("show");
+
+  var addServiceButton = document.getElementById("add-service");
+  if (addServiceButton) {
+    addServiceButton.addEventListener("click", function () {
+      var totalForms = document.getElementById("id_services-TOTAL_FORMS");
+      var formIndex = parseInt(totalForms.value, 10);
+      var template = document.getElementById("empty-service-form").innerHTML;
+      document.getElementById("service-form-list").insertAdjacentHTML(
+        "beforeend",
+        template.replace(/__prefix__/g, formIndex)
+      );
+      totalForms.value = formIndex + 1;
+    });
+  }
+});
+</script>
+{% endblock %}

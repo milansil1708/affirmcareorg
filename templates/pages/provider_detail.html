@@ -15,8 +15,9 @@
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <link rel="stylesheet" href="{% static 'pages/css/home.css' %}">
-<link rel="stylesheet" href="{% static 'pages/css/provider_detail.css' %}">
+<link rel="stylesheet" href="{% static 'pages/css/provider_detail.css' %}?v=2">
 {% endblock %}
 
 {% block content %}
@@ -25,6 +26,63 @@
     <div class="container clearfix">
       <h2 class="provider-title">{{ provider.name }}</h2>
       <span class="provider-type-badge">{{ provider.get_org_type_display }}</span>
+
+      {% if not provider.user_id %}
+        <div class="provider-claim-card">
+          <div class="provider-claim-icon">
+            <i class="fa-regular fa-building"></i>
+          </div>
+          <div class="provider-claim-copy">
+            <span class="provider-claim-label">Unclaimed organization</span>
+            <h3>Do you represent {{ provider.name }}?</h3>
+            {% if current_claim %}
+              <p>
+                Your claim was submitted and is awaiting administrator review.
+                Ownership will only be assigned after approval, and the decision will
+                be emailed to <strong>{{ request.user.email }}</strong>.
+              </p>
+              <span class="provider-claim-status">
+                <i class="fa-regular fa-clock"></i> Claim under review
+              </span>
+            {% elif pending_claim %}
+              <p>
+                You already have a pending claim for
+                <strong>{{ pending_claim.organization.name }}</strong>. Wait for an
+                administrator decision before claiming another organization.
+              </p>
+              <span class="provider-claim-status provider-claim-status-muted">
+                Another claim is under review
+              </span>
+            {% elif claimant_has_other_organization %}
+              <p>
+                This listing is available to claim, but your account already manages
+                another provider organization. Contact Affirm Care support if ownership
+                needs to be transferred.
+              </p>
+              <span class="provider-claim-status provider-claim-status-muted">
+                Claim unavailable for this account
+              </span>
+            {% else %}
+              <p>
+                Submit a claim request for administrator review. Submitting does not
+                immediately change ownership. An administrator will verify the request,
+                then email you when it is approved or rejected.
+              </p>
+              <button type="button" class="provider-claim-button" id="claim-organization-button">
+                <i class="fa-solid fa-shield-halved"></i> Claim this organization
+              </button>
+              <form
+                method="post"
+                action="{% url 'claim_provider_organization' provider.slug %}"
+                id="claim-organization-form"
+                class="d-none"
+              >
+                {% csrf_token %}
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
 
       <div class="provider-section-title"><span>Provider Summary</span></div>
       <div class="row provider-summary-row">
@@ -134,6 +192,7 @@
 
 {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(function () {
   var $similarCarousel = $(".similar-providers-carousel");
@@ -155,6 +214,61 @@ $(function () {
       }
     });
   }
+
+  var claimButton = document.getElementById("claim-organization-button");
+  if (claimButton) {
+    claimButton.addEventListener("click", function () {
+      {% if request.user.is_authenticated %}
+        Swal.fire({
+          icon: "question",
+          title: "Claim {{ provider.name|escapejs }}?",
+          html:
+            '<div class="claim-confirmation-copy">' +
+              '<p><strong>What happens next:</strong></p>' +
+              '<ol>' +
+                '<li>Your request is sent to an Affirm Care administrator.</li>' +
+                '<li>The organization remains unclaimed while it is reviewed.</li>' +
+                '<li>You receive an email when the request is approved or rejected.</li>' +
+              '</ol>' +
+            '</div>',
+          showCancelButton: true,
+          confirmButtonText: "Submit claim",
+          cancelButtonText: "Cancel",
+          confirmButtonColor: "#168d7d",
+          cancelButtonColor: "#6c757d",
+          reverseButtons: true,
+          focusCancel: true
+        }).then(function (result) {
+          if (result.isConfirmed) {
+            document.getElementById("claim-organization-form").submit();
+          }
+        });
+      {% else %}
+        Swal.fire({
+          icon: "info",
+          title: "Log in to submit a claim",
+          text: "You need a provider account before an administrator can review and assign this organization.",
+          showCancelButton: true,
+          confirmButtonText: "Go to login",
+          cancelButtonText: "Cancel",
+          confirmButtonColor: "#168d7d"
+        }).then(function (result) {
+          if (result.isConfirmed) {
+            window.location.href = "{% url 'users:login' %}?next={{ request.path|urlencode }}";
+          }
+        });
+      {% endif %}
+    });
+  }
+
+  {% for message in messages %}
+    Swal.fire({
+      icon: "{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}error{% else %}info{% endif %}",
+      title: "{% if message.tags == 'success' %}Claim submitted{% elif message.tags == 'error' %}Claim unavailable{% else %}Claim status{% endif %}",
+      text: "{{ message|escapejs }}",
+      confirmButtonColor: "#168d7d"
+    });
+  {% endfor %}
 });
 </script>
 {% endblock %}

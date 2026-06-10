@@ -1,13 +1,16 @@
 from django.contrib import admin
+from django.contrib import messages
 from django import forms
 from tinymce.widgets import TinyMCE
 
+from .claims import ClaimDecisionError, approve_claim, reject_claim
 from .models import (
     AffirmingFeature,
     OrganizationService,
     ProviderFeature,
     ProviderLocation,
     ProviderOrganization,
+    ProviderOrganizationClaim,
     Service,
 )
 
@@ -53,7 +56,15 @@ class ProviderOrganizationAdminForm(forms.ModelForm):
 @admin.register(ProviderOrganization)
 class ProviderOrganizationAdmin(admin.ModelAdmin):
     form = ProviderOrganizationAdminForm
-    list_display = ("name", "org_type", "is_active", "phone", "email", "last_verified_at")
+    list_display = (
+        "name",
+        "org_type",
+        "user",
+        "is_active",
+        "phone",
+        "email",
+        "last_verified_at",
+    )
     list_filter = ("org_type", "is_active", "last_verified_at")
     search_fields = ("name", "description", "phone", "email", "website_url")
     readonly_fields = ("slug",)
@@ -61,6 +72,7 @@ class ProviderOrganizationAdmin(admin.ModelAdmin):
     inlines = (ProviderLocationInline, OrganizationServiceInline, ProviderFeatureInline)
     fieldsets = (
         ("Basic Info", {"fields": ("name", "slug", "org_type", "description", "is_active")}),
+        ("Ownership", {"fields": ("user",)}),
         ("Contact", {"fields": ("phone", "email", "website_url", "booking_url")}),
         ("Verification", {"fields": ("last_verified_at",)}),
     )
@@ -121,3 +133,90 @@ class ProviderFeatureAdmin(admin.ModelAdmin):
     search_fields = ("provider__name", "feature__label", "evidence_note", "source_url")
     autocomplete_fields = ("provider", "feature")
     ordering = ("provider__name", "feature__label")
+
+
+@admin.register(ProviderOrganizationClaim)
+class ProviderOrganizationClaimAdmin(admin.ModelAdmin):
+    list_display = (
+        "organization",
+        "claimant_email",
+        "status",
+        "created_at",
+        "reviewed_by",
+        "reviewed_at",
+    )
+    list_filter = ("status", "created_at", "reviewed_at")
+    search_fields = (
+        "organization__name",
+        "claimant_email",
+        "claimant__email",
+    )
+    autocomplete_fields = ("organization", "claimant")
+    readonly_fields = (
+        "organization",
+        "claimant",
+        "claimant_email",
+        "status",
+        "created_at",
+        "reviewed_by",
+        "reviewed_at",
+    )
+    fields = (
+        "organization",
+        "claimant",
+        "claimant_email",
+        "status",
+        "created_at",
+        "admin_note",
+        "reviewed_by",
+        "reviewed_at",
+    )
+    ordering = ("-created_at",)
+    actions = ("approve_selected_claims", "reject_selected_claims")
+
+    def has_add_permission(self, request):
+        return False
+
+    @admin.action(description="Approve selected pending claims")
+    def approve_selected_claims(self, request, queryset):
+        approved = 0
+        for claim in queryset:
+            try:
+                approve_claim(claim.pk, request.user, claim.admin_note)
+            except ClaimDecisionError as error:
+                self.message_user(
+                    request,
+                    f"{claim}: {error}",
+                    level=messages.ERROR,
+                )
+            else:
+                approved += 1
+
+        if approved:
+            self.message_user(
+                request,
+                f"{approved} claim(s) approved and ownership assigned.",
+                level=messages.SUCCESS,
+            )
+
+    @admin.action(description="Reject selected pending claims")
+    def reject_selected_claims(self, request, queryset):
+        rejected = 0
+        for claim in queryset:
+            try:
+                reject_claim(claim.pk, request.user, claim.admin_note)
+            except ClaimDecisionError as error:
+                self.message_user(
+                    request,
+                    f"{claim}: {error}",
+                    level=messages.ERROR,
+                )
+            else:
+                rejected += 1
+
+        if rejected:
+            self.message_user(
+                request,
+                f"{rejected} claim(s) rejected.",
+                level=messages.SUCCESS,
+            )

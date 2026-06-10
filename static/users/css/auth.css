@@ -1,0 +1,219 @@
+.auth-page {
+  min-height: 100vh;
+  background: #f7faf9;
+  color: #173d38;
+}
+
+.auth-page main,
+.auth-layout {
+  min-height: 100vh;
+}
+
+.auth-visual {
+  position: relative;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100vh;
+  padding: 52px 64px;
+  overflow: hidden;
+  color: #fff;
+  background:
+    linear-gradient(180deg, rgba(5, 47, 43, 0.18), rgba(5, 47, 43, 0.82)),
+    url("../../pages/images/slider/1.jpg") center / cover no-repeat;
+}
+
+.auth-visual::after {
+  position: absolute;
+  right: -140px;
+  bottom: -140px;
+  width: 380px;
+  height: 380px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+  content: "";
+}
+
+.auth-brand,
+.auth-mobile-brand {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  width: fit-content;
+  font-family: "Raleway", sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.auth-brand,
+.auth-brand:hover {
+  color: #fff;
+}
+
+.auth-brand strong,
+.auth-mobile-brand strong {
+  color: #31c5af;
+}
+
+.auth-visual-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 620px;
+  padding-bottom: 40px;
+}
+
+.auth-visual-copy h1 {
+  margin: 10px 0 18px;
+  color: #fff;
+  font-size: clamp(44px, 5vw, 72px);
+  line-height: 1.03;
+}
+
+.auth-visual-copy > p:last-child {
+  max-width: 540px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 18px;
+}
+
+.auth-eyebrow {
+  margin-bottom: 10px;
+  color: #178b7c;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.auth-visual .auth-eyebrow {
+  color: #8ce8d8;
+}
+
+.auth-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 48px;
+  background: #fff;
+}
+
+.auth-form-wrap {
+  width: 100%;
+  max-width: 390px;
+}
+
+.auth-mobile-brand {
+  margin-bottom: 64px;
+  color: #173d38;
+}
+
+.auth-heading {
+  margin-bottom: 34px;
+}
+
+.auth-heading h2 {
+  margin-bottom: 10px;
+  color: #173d38;
+  font-size: 32px;
+  line-height: 1.2;
+}
+
+.auth-heading > p:last-child {
+  margin: 0;
+  color: #6f817e;
+}
+
+.auth-page label {
+  color: #294e49;
+  font-weight: 600;
+}
+
+.auth-page .form-control {
+  height: 50px;
+  border-color: #d8e3e0;
+  border-radius: 5px;
+  color: #173d38;
+}
+
+.auth-page .form-control:focus {
+  border-color: #168d7d;
+  box-shadow: 0 0 0 0.2rem rgba(22, 141, 125, 0.12);
+}
+
+.auth-submit {
+  margin: 10px 0 0;
+  background-color: #168d7d;
+  font-family: "Raleway", sans-serif;
+  text-align: center;
+}
+
+.auth-submit:hover {
+  background-color: #117568;
+}
+
+.auth-switch {
+  margin: 28px 0 0;
+  color: #6f817e;
+  text-align: center;
+}
+
+.auth-switch a {
+  color: #168d7d;
+  font-weight: 700;
+}
+
+.auth-toast-container {
+  position: fixed;
+  z-index: 1100;
+  top: 24px;
+  right: 24px;
+  width: min(360px, calc(100vw - 48px));
+}
+
+.auth-toast {
+  width: 100%;
+  max-width: none;
+  margin-bottom: 12px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 5px;
+  box-shadow: 0 12px 30px rgba(23, 61, 56, 0.18);
+  opacity: 1;
+}
+
+.auth-toast-success {
+  border-left: 4px solid #168d7d;
+}
+
+.auth-toast-error {
+  border-left: 4px solid #c94747;
+}
+
+@media (max-width: 991.98px) {
+  .auth-panel {
+    padding: 40px 24px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .auth-panel {
+    align-items: flex-start;
+    padding-top: 36px;
+  }
+
+  .auth-mobile-brand {
+    margin-bottom: 48px;
+    font-size: 26px;
+  }
+
+  .auth-heading h2 {
+    font-size: 28px;
+  }
+
+  .auth-toast-container {
+    top: 16px;
+    right: 16px;
+    width: calc(100vw - 32px);
+  }
+}

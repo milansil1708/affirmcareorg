@@ -1,24 +1,51 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
-</head>
-<body>
-    <h1>Register</h1>
-    <form method="post">
-        {% csrf_token %}
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required>
-        <br>
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required>
-        <br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
-        <br>
-        <button type="submit">Register</button>
-    </form>
-</body>
-</html>
+{% extends "users/auth_base.html" %}
+
+{% block page_title %}Provider Registration{% endblock %}
+
+{% block auth_content %}
+  <div class="auth-heading">
+    <p class="auth-eyebrow">Provider registration</p>
+    <h2>Create your account</h2>
+    <p>Register to manage your provider organization.</p>
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+      {{ form.email }}
+      {% for error in form.email.errors %}
+        <div class="invalid-feedback d-block">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
+      {{ form.password1 }}
+      {% for error in form.password1.errors %}
+        <div class="invalid-feedback d-block">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+      {{ form.password2 }}
+      {% for error in form.password2.errors %}
+        <div class="invalid-feedback d-block">{{ error }}</div>
+      {% endfor %}
+      {% for error in form.non_field_errors %}
+        <div class="invalid-feedback d-block">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <button type="submit" class="button button-3d button-rounded btn-block auth-submit">
+      Create provider account
+    </button>
+  </form>
+
+  <p class="auth-switch">
+    Already have an account?
+    <a href="{% url 'users:login' %}">Log in</a>
+  </p>
+{% endblock %}

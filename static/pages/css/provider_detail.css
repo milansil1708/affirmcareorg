@@ -19,6 +19,108 @@
   margin-bottom: 24px;
 }
 
+.provider-claim-card {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 18px;
+  margin-bottom: 34px;
+  padding: 24px;
+  border: 1px solid #cde5e0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f2fbf9, #fff);
+  box-shadow: 0 10px 30px rgba(15, 102, 94, 0.08);
+}
+
+.provider-claim-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  background: #dff4ef;
+  color: #0f796d;
+  font-size: 22px;
+}
+
+.provider-claim-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #168d7d;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.provider-claim-copy h3 {
+  margin-bottom: 7px;
+  color: #173d38;
+  font-size: 21px;
+}
+
+.provider-claim-copy p {
+  max-width: 850px;
+  margin-bottom: 14px;
+  color: #596c68;
+  line-height: 1.6;
+}
+
+.provider-claim-button {
+  padding: 11px 17px;
+  border: 0;
+  border-radius: 7px;
+  background: #168d7d;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.provider-claim-button:hover,
+.provider-claim-button:focus {
+  background: #117568;
+  color: #fff;
+  outline: 0;
+  transform: translateY(-1px);
+}
+
+.provider-claim-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #fff4d8;
+  color: #8a650f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.provider-claim-status-muted {
+  background: #edf1f0;
+  color: #66736f;
+}
+
+.claim-confirmation-copy {
+  color: #52635f;
+  text-align: left;
+}
+
+.claim-confirmation-copy p {
+  margin-bottom: 8px;
+}
+
+.claim-confirmation-copy ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.claim-confirmation-copy li {
+  margin-bottom: 7px;
+  line-height: 1.5;
+}
+
 .provider-section-title {
   position: relative;
   margin-bottom: 18px;
@@ -137,5 +239,12 @@
 
   .map-card {
     height: 290px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .provider-claim-card {
+    grid-template-columns: 1fr;
+    padding: 20px;
   }
 }

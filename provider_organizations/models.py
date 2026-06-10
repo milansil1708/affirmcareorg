@@ -1,4 +1,6 @@
 from django.db import models
+from django.conf import settings
+from django.db.models import Q
 from autoslug import AutoSlugField
 
 # Create your models here.
@@ -11,7 +13,13 @@ class ProviderOrganization(models.Model):
         ('private_practice', 'Private Practice'),
         ('nonprofit', 'Nonprofit'),
     ]
-    org_type = models.CharField(max_length=50,choices=ORG_TYPE_CHOICES)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="provider_organizations",
+        blank=True,
+        null=True,
+    )
     name = models.CharField(max_length=100)
     slug = AutoSlugField(
         populate_from="name",
@@ -28,7 +36,62 @@ class ProviderOrganization(models.Model):
 
     def __str__(self):
         return self.name
-    
+
+
+class ProviderOrganizationClaim(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    organization = models.ForeignKey(
+        ProviderOrganization,
+        on_delete=models.CASCADE,
+        related_name="claim_requests",
+    )
+    claimant = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="provider_claim_requests",
+        blank=True,
+        null=True,
+    )
+    claimant_email = models.EmailField()
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    admin_note = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="reviewed_provider_claims",
+        blank=True,
+        null=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        constraints = (
+            models.UniqueConstraint(
+                fields=("organization", "claimant"),
+                condition=Q(status="pending"),
+                name="unique_pending_provider_claim",
+            ),
+            models.UniqueConstraint(
+                fields=("claimant",),
+                condition=Q(status="pending"),
+                name="unique_pending_claim_per_user",
+            ),
+        )
+
+    def __str__(self):
+        return f"{self.organization} - {self.claimant_email} ({self.get_status_display()})"
+
+
 class ProviderLocation(models.Model):
     organization = models.ForeignKey(ProviderOrganization, on_delete=models.CASCADE, related_name='locations')
     address_line1 = models.CharField(max_length=255)
@@ -97,4 +160,4 @@ class ProviderFeature(models.Model):
     value = models.CharField(max_length=20,choices=VALUE_CHOICES,default="unknown")
     evidence_note = models.TextField(blank=True,)
     source_url = models.URLField(blank=True, null=True)
-    verified_at = models.DateTimeField(blank=True, null=True)   
+    verified_at = models.DateTimeField(blank=True, null=True)

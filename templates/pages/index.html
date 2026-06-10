@@ -76,10 +76,59 @@
       text-shadow: none;
     }
 
+    #primary-menu .logout-menu-form {
+      margin: 0;
+    }
+
+    #primary-menu .logout-menu-button {
+      height: 100px;
+      padding: 39px 15px;
+      border: 0;
+      background: transparent;
+      color: #444;
+      font-family: "Raleway", sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      line-height: 22px;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    #header.dark:not(.sticky-header) #primary-menu .logout-menu-button {
+      color: #fff;
+    }
+
+    #primary-menu .logout-menu-button:hover,
+    #primary-menu .logout-menu-button:focus {
+      color: #dc3545;
+      outline: 0;
+    }
+
+    .sticky-header #primary-menu .logout-menu-button {
+      height: 60px;
+      padding-top: 19px;
+      padding-bottom: 19px;
+      color: #444;
+    }
+
+    .sticky-header #primary-menu .logout-menu-button:hover,
+    .sticky-header #primary-menu .logout-menu-button:focus {
+      color: #dc3545;
+    }
+
     @media (max-width: 767px) {
       #logo a.affirmcare-logo {
         font-size: 24px;
         padding: 24px 0;
+      }
+
+      #primary-menu .logout-menu-button {
+        width: 100%;
+        height: auto;
+        padding: 14px 5px;
+        color: #444;
+        text-align: left;
       }
     }
 
@@ -99,7 +148,7 @@
 </head>
 <body class="stretched">
   <div id="wrapper" class="clearfix">
-   <header id="header" class="transparent-header full-header" data-sticky-class="not-dark">
+   <header id="header" class="transparent-header full-header {% block header_class %}{% endblock %}" data-sticky-class="not-dark">
 
 			<div id="header-wrap">
 
@@ -127,8 +176,27 @@
 						<ul>
 							<li class="current"><a href="{% url 'home' %}"><div>Home</div></a>
 							</li>
+              {% comment %}
 							<li><a href="{% url 'blogs' %}"><div>Blogs</div></a>
 							</li>
+              {% endcomment %}
+              {% if request.user.is_authenticated %}
+                <li>
+                  <a href="{% url 'provider_account' %}"><div>Organization</div></a>
+                </li>
+                <li class="logout-menu-item">
+                  <form method="post" action="{% url 'users:logout' %}" class="logout-menu-form">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-menu-button">Logout</button>
+                  </form>
+                </li>
+              {% else %}
+                <li>
+                  <a href="{% url 'users:login' %}">
+                    <div>Login</div>
+                  </a>
+                </li>
+              {% endif %}
 						</ul>
 
 						<!-- Top Search
