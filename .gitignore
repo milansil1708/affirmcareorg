@@ -21,7 +21,7 @@ admin/.yarn-integrity
 
 *.zip
 
-static_files/
+staticfiles/
 
 # Python template
 __pycache__/

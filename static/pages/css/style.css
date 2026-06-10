@@ -1679,13 +1679,6 @@ body.no-superfish #primary-menu li:hover>.mega-menu-content {
   color: #1abc9c;
 }
 
-#primary-menu ul ul>li.sub-menu>a,
-#primary-menu ul ul>li.sub-menu:hover>a {
-  background-image: url("images/icons/submenu.png");
-  background-position: right center;
-  background-repeat: no-repeat;
-}
-
 /* ----------------------------------------------------------------
 	Mega Menu
 -----------------------------------------------------------------*/
@@ -1958,7 +1951,6 @@ body:not(.device-md):not(.device-sm):not(.device-xs) #primary-menu.style-2.cente
 
 #primary-menu.sub-title>ul>li,
 #primary-menu.sub-title.style-2>div>ul>li {
-  background: url("images/icons/menu-divider.png") no-repeat right center;
   margin-left: 1px;
 }
 
@@ -3456,9 +3448,7 @@ body.side-panel-open .body-overlay {
 }
 
 body.side-panel-open:not(.device-xs):not(.device-sm):not(.device-md) .body-overlay:hover {
-  cursor:
-    url("images/icons/close.png") 15 15,
-    default;
+  cursor: default;
 }
 
 /* ----------------------------------------------------------------
@@ -3626,7 +3616,6 @@ body:not(.stretched) .slider-parallax .slider-parallax-inner {
   width: 100%;
   height: 100%;
   margin: 0;
-  background: url("../images/pattern2.png") repeat;
 }
 
 .swiper_wrapper .swiper-slide {
@@ -3734,7 +3723,7 @@ body:not(.stretched) .slider-parallax .slider-parallax-inner {
   top: 0;
   left: 0;
   z-index: 5;
-  background: transparent url("../images/grid.png") repeat;
+  background: transparent;
   -webkit-backface-visibility: hidden;
 }
 
@@ -4151,12 +4140,6 @@ body.stretched .container-fullwidth .breadcrumb {
 /* Page Title - Background Pattern
 -----------------------------------------------------------------*/
 
-#page-title.page-title-pattern {
-  background-image: url("images/pattern.png");
-  background-repeat: repeat;
-  background-attachment: fixed;
-}
-
 /* Page Title - Parallax Background
 -----------------------------------------------------------------*/
 
@@ -4182,7 +4165,6 @@ body.stretched .container-fullwidth .breadcrumb {
 
 #page-title.page-title-parallax {
   background-color: transparent;
-  background-image: url("images/parallax/parallax-bg.jpg");
   background-attachment: fixed;
   background-position: 50% 0;
   background-repeat: no-repeat;
@@ -9437,9 +9419,6 @@ body:not(.device-touch) .button.button-full strong {
   padding: 2px;
   z-index: -1;
   box-shadow: none;
-  background-image: url("images/icons/iconalt.svg");
-  background-position: center center;
-  background-size: 100% 100%;
   -webkit-transition:
     -webkit-transform 0.5s,
     opacity 0.5s,
@@ -9840,12 +9819,6 @@ body:not(.device-touch) .social-icon {
   box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
 }
 
-.i-alt {
-  background-image: url("images/icons/iconalt.svg");
-  background-position: center center;
-  background-size: 100% 100%;
-}
-
 .i-rounded:hover,
 .i-circled:hover {
   background-color: #1abc9c;
@@ -10023,7 +9996,7 @@ body:not(.device-touch) .social-icon {
   top: 0;
   left: 0;
   text-align: center;
-  background: rgba(0, 0, 0, 0.2) url("../images/grid.png") repeat;
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .i-overlay a {
@@ -12827,7 +12800,6 @@ blockquote.float-right {
   top: 50%;
   margin-left: -32px;
   margin-top: -32px;
-  background: url("images/icons/play.png") no-repeat;
   cursor: pointer;
   z-index: 1;
   -webkit-backface-visibility: hidden;
@@ -13784,10 +13756,6 @@ input[type="checkbox"]:not(:checked)+label.error {
 /* Fancy Title - Bottom Short Border
 -----------------------------------------------------------------*/
 
-.fancy-title.title-dotted-border {
-  background: url("images/icons/dotted.png") repeat-x center;
-}
-
 /* Sub Heading
 -----------------------------------------------------------------*/
 
@@ -14640,7 +14608,6 @@ body:not(.device-touch) .tagcloud a {
 
 .widget_recent_comments li {
   display: block;
-  background: url("images/icons/widget-comment.png") left top no-repeat;
   padding: 4px 0 4px 20px;
 }
 
@@ -14653,7 +14620,6 @@ body:not(.device-touch) .tagcloud a {
 .widget_pages li a,
 .widget_rss li a,
 .widget_recent_comments li a {
-  background: url("images/icons/widget-link.png") left top no-repeat;
   border: none !important;
   color: #444;
   font-size: 14px;
