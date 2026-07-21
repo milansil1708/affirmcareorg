@@ -56,25 +56,19 @@
           aria-label="Conversation"
         ></div>
 
-        <section class="chat-suggestions" id="chat-suggestions" aria-labelledby="chat-suggestions-title">
+        <section class="chat-suggestions" id="chat-suggestions" aria-labelledby="chat-suggestions-title"{% if not chat_suggestions %} hidden{% endif %}>
           <h2 id="chat-suggestions-title">Try asking</h2>
-          <div class="chat-suggestion-grid">
-          <button type="button" class="chat-suggestion" data-prompt="Find telehealth providers in New York">
-            <i class="fa-solid fa-laptop-medical" aria-hidden="true"></i>
-            <span>Telehealth in New York</span>
-          </button>
-          <button type="button" class="chat-suggestion" data-prompt="Show wheelchair-accessible clinics">
-            <i class="fa-solid fa-wheelchair-move" aria-hidden="true"></i>
-            <span>Accessible clinics</span>
-          </button>
-          <button type="button" class="chat-suggestion" data-prompt="Find providers offering youth services">
-            <i class="fa-solid fa-people-roof" aria-hidden="true"></i>
-            <span>Youth services</span>
-          </button>
-          <button type="button" class="chat-suggestion" data-prompt="Find providers that use informed consent">
-            <i class="fa-solid fa-shield-heart" aria-hidden="true"></i>
-            <span>Informed consent</span>
-          </button>
+          <div class="chat-suggestions-carousel">
+            <div class="chat-suggestion-track" id="chat-suggestion-track" tabindex="0" aria-label="Starter searches">
+              {% for suggestion in chat_suggestions %}
+              <button type="button" class="chat-suggestion" data-prompt="{{ suggestion.prompt }}">
+                <i class="fa-solid {{ suggestion.icon }}" aria-hidden="true"></i>
+                <span class="chat-suggestion-copy">
+                  <span>{{ suggestion.label }}</span>
+                </span>
+              </button>
+              {% endfor %}
+            </div>
           </div>
         </section>
 
@@ -139,5 +133,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'provider_chat/js/chat.js' %}?v=20260721.4"></script>
+<script src="{% static 'provider_chat/js/chat.js' %}?v=20260721.8"></script>
 {% endblock %}

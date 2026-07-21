@@ -45,6 +45,9 @@ Filter rules:
 - The application context contains the last validated search. For a refinement,
   preserve every prior filter the user did not change or explicitly remove and
   return the complete effective filter set, not only the changed fields.
+- A standalone new location search such as "providers in NY" or "providers in
+  New York" starts a new search. Remove old delivery, service, feature, and
+  access filters unless the user repeats them.
 - If the user clearly starts over, return only the filters for the new search.
 - When asking a clarification question, preserve any already-known effective
   filters in the structured output.

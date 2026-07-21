@@ -20,6 +20,7 @@ from .memory import (
 )
 from .orchestrator import handle_chat_message
 from .serializers import ChatRequestSerializer
+from .suggestions import get_available_suggestions
 
 
 class ProviderChatView(APIView):
@@ -125,6 +126,7 @@ class ProviderChatPageView(TemplateView):
         context["chat_conversation_ttl_ms"] = (
             settings.CHAT_CONVERSATION_TTL_MINUTES * 60 * 1000
         )
+        context["chat_suggestions"] = get_available_suggestions()
         return context
 
 

@@ -9,6 +9,7 @@
     "Welcome to Affirm Care. Tell me what kind of provider you need, where you want care, and which services or access features matter to you.";
   var messageList = document.getElementById("chat-message-list");
   var suggestions = document.getElementById("chat-suggestions");
+  var suggestionTrack = document.getElementById("chat-suggestion-track");
   var resultsSection = document.getElementById("chat-results");
   var resultsTrack = document.getElementById("chat-results-track");
   var seeAllLink = document.getElementById("chat-see-all-link");
@@ -25,6 +26,7 @@
   var isLoading = false;
   var transientError = "";
   var state = loadState();
+  var hasSuggestions = Boolean(suggestionTrack && suggestionTrack.children.length);
   var nearbyRequestPattern = /\b(?:near\s+(?:me|my (?:location|area)|where i am)|nearby(?:\s+(?:me|here))?|closest(?:\s+(?:to|near)\s+me)?|close\s+to\s+me|around\s+here|in\s+my\s+area|at\s+my\s+location|my\s+location|where\s+i\s+am|local\s+providers?)\b/i;
 
   if (window.ResizeObserver) {
@@ -59,7 +61,7 @@
     if (!button || isLoading) return;
     input.value = button.dataset.prompt;
     resizeInput();
-    composer.requestSubmit();
+    sendMessage(input.value);
   });
 
   resetButton.addEventListener("click", function () {
@@ -200,7 +202,7 @@
   function render() {
     renderMessages();
     renderResults();
-    suggestions.hidden = state.messages.some(function (message) {
+    suggestions.hidden = !hasSuggestions || state.messages.some(function (message) {
       return message.role === "user";
     });
     sendButton.disabled = isLoading;

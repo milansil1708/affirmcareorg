@@ -367,15 +367,26 @@ body.provider-chat-layout #top-search {
   font-weight: 700;
 }
 
-.chat-suggestion-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.chat-suggestions-carousel {
+  padding: 1px 0;
+}
+
+.chat-suggestion-track {
+  display: flex;
   gap: 10px;
+  overflow-x: auto;
+  scroll-behavior: auto;
+  scrollbar-width: none;
+}
+
+.chat-suggestion-track::-webkit-scrollbar {
+  display: none;
 }
 
 .chat-suggestion {
   display: flex;
-  min-height: 78px;
+  min-width: calc((100% - 30px) / 4);
+  min-height: 88px;
   align-items: flex-start;
   gap: 10px;
   padding: 13px;
@@ -392,6 +403,10 @@ body.provider-chat-layout #top-search {
     border-color 0.2s ease,
     background-color 0.2s ease,
     transform 0.2s ease;
+}
+
+.chat-suggestion-copy {
+  display: block;
 }
 
 .chat-suggestion:nth-child(2) i {
@@ -415,7 +430,7 @@ body.provider-chat-layout #top-search {
   border-color: var(--chat-teal);
   background: #f6fbfa;
   outline: none;
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .chat-results {
@@ -778,12 +793,9 @@ body.provider-chat-layout #top-search {
     font-size: 12px;
   }
 
-  .chat-suggestion-grid {
-    gap: 8px;
-  }
-
   .chat-suggestion {
-    min-height: 70px;
+    min-width: calc((100% - 16px) / 3);
+    min-height: 78px;
     gap: 8px;
     padding: 11px;
     font-size: 12px;
@@ -990,13 +1002,9 @@ body.provider-chat-layout #top-search {
     font-size: 12px;
   }
 
-  .chat-suggestion-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
   .chat-suggestion {
-    min-height: 64px;
+    min-width: calc((100% - 8px) / 2);
+    min-height: 72px;
     gap: 8px;
     padding: 10px;
     font-size: 12px;
@@ -1218,13 +1226,9 @@ body.provider-chat-layout #top-search {
     font-size: 11px;
   }
 
-  .chat-suggestion-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 7px;
-  }
-
   .chat-suggestion {
-    min-height: 68px;
+    min-width: 100%;
+    min-height: 72px;
     align-items: flex-start;
     gap: 7px;
     padding: 9px;
