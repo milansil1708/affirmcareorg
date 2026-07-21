@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="{% static 'pages/css/magnific-popup.css' %}" />
   <link rel="stylesheet" href="{% static 'pages/css/responsive.css' %}" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'provider_chat/css/launcher.css' %}?v=20260720.3">
   <style>
     #header.full-header #logo {
       border-right: none;
@@ -117,10 +118,64 @@
       color: #dc3545;
     }
 
+    @media (max-width: 991.98px) {
+      #primary-menu-trigger {
+        top: 18px;
+        right: 75px;
+        left: auto;
+        margin-top: 0;
+      }
+
+      #top-search > a {
+        display: flex;
+        top: 18px;
+        right: 25px;
+        width: 50px;
+        height: 50px;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        color: #555;
+      }
+
+      #top-search > a img {
+        display: none;
+      }
+
+      #top-search > a::before {
+        display: block;
+        width: 15px;
+        height: 15px;
+        background-color: currentColor;
+        content: "";
+        -webkit-mask: url("{% static 'pages/images/icons/search.svg' %}") center / contain no-repeat;
+        mask: url("{% static 'pages/images/icons/search.svg' %}") center / contain no-repeat;
+      }
+
+      body.provider-chat-layout #primary-menu-trigger,
+      body.provider-chat-layout #top-search > a,
+      .responsive-sticky-header:not(.static-sticky) #primary-menu-trigger,
+      .responsive-sticky-header:not(.static-sticky) #top-search > a {
+        top: 5px;
+      }
+    }
+
     @media (max-width: 767px) {
       #logo a.affirmcare-logo {
         font-size: 24px;
         padding: 24px 0;
+      }
+
+      #primary-menu-trigger,
+      #top-search > a {
+        top: 11px;
+      }
+
+      body.provider-chat-layout #primary-menu-trigger,
+      body.provider-chat-layout #top-search > a,
+      .responsive-sticky-header:not(.static-sticky) #primary-menu-trigger,
+      .responsive-sticky-header:not(.static-sticky) #top-search > a {
+        top: 5px;
       }
 
       #primary-menu .logout-menu-button {
@@ -146,7 +201,7 @@
   </style>
   {% block extra_css %}{% endblock %}
 </head>
-<body class="stretched">
+<body class="stretched {% block body_class %}{% endblock %}">
   <div id="wrapper" class="clearfix">
    <header id="header" class="transparent-header full-header {% block header_class %}{% endblock %}" data-sticky-class="not-dark">
 
@@ -193,7 +248,7 @@
               {% else %}
                 <li>
                   <a href="{% url 'users:login' %}">
-                    <div>Login</div>
+                    <div>Provider Login</div>
                   </a>
                 </li>
               {% endif %}
@@ -202,7 +257,10 @@
 						<!-- Top Search
 						============================================= -->
 						<div id="top-search">
-							<a href="{% url 'home' %}#provider-search" aria-label="Go to provider search"><i class="icon-search3"></i></a>
+							<a href="{% url 'home' %}#provider-search" aria-label="Go to provider search"><img
+                  src="{% static 'pages/images/icons/search.svg' %}"
+                  alt="Send"
+              ></a>
 							<form action="{% url 'home' %}#provider-search" method="get">
 								<input type="text" name="keyword" class="form-control" value="" placeholder="Search providers...">
 							</form>
@@ -235,9 +293,40 @@
 
   <div id="gotoTop" class="icon-angle-up"></div>
 
+  {% if request.resolver_match.namespace != "provider_chat_pages" %}
+  <a
+    class="provider-chat-invite"
+    href="{% url 'provider_chat_pages:chat' %}{% if provider.slug %}?provider={{ provider.slug|urlencode }}{% endif %}"
+    data-chat-invite
+    data-message="Chat with me to find the right provider."
+    aria-label="Chat with me to find the right provider"
+    hidden
+  >
+    <span class="provider-chat-invite-typing" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </span>
+    <span class="provider-chat-invite-text" data-chat-invite-text></span>
+  </a>
+  <a
+    class="provider-chat-launcher"
+    href="{% url 'provider_chat_pages:chat' %}{% if provider.slug %}?provider={{ provider.slug|urlencode }}{% endif %}"
+    aria-label="Open the Affirm Care provider assistant"
+    title="Open provider assistant"
+  >
+    <img
+      class="provider-chat-launcher-icon"
+      src="{% static 'pages/images/icons/affirm-care-bot.png' %}"
+      alt=""
+      aria-hidden="true"
+    >
+    <span class="provider-chat-launcher-badge" aria-hidden="true"></span>
+  </a>
+  {% endif %}
+
   <script src="{% static 'pages/js/jquery.js' %}"></script>
   <script src="{% static 'pages/js/plugins.js' %}"></script>
   <script src="{% static 'pages/js/functions.js' %}"></script>
+  <script src="{% static 'provider_chat/js/launcher.js' %}?v=20260720.2"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

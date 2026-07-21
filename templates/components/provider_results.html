@@ -1,0 +1,83 @@
+<section class="provider-results-component" aria-labelledby="provider-results-heading">
+  {% if show_results_heading %}
+  <div class="provider-results-heading" id="search-results">
+    <div>
+      <span class="provider-results-kicker">Directory results</span>
+      <h3 id="provider-results-heading">Provider matches</h3>
+    </div>
+    <p class="provider-results-count">
+      {{ provider_count }} active provider{{ provider_count|pluralize }} found
+    </p>
+  </div>
+  {% else %}
+  <h2 id="provider-results-heading" class="sr-only">Provider matches</h2>
+  {% endif %}
+
+  <div class="row search-results-row">
+    {% for provider in providers %}
+    <div class="search-result-col mb-4">
+      <article class="search-result-card">
+        <span class="search-result-type">{{ provider.get_org_type_display|default:"Provider" }}</span>
+        <h4 class="search-result-title">
+          <a href="{% url 'provider_detail' provider.slug %}" class="provider-card-link">
+            {{ provider.name }}
+          </a>
+        </h4>
+        <p class="search-result-services">
+          {% for org_service in provider.services.all %}
+          {{ org_service.service.name }}{% if not forloop.last %}, {% endif %}
+          {% empty %}
+          Services not listed
+          {% endfor %}
+        </p>
+        {% if provider.locations.first %}
+        <p class="search-result-meta">
+          <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+          {{ provider.locations.first.city }}, {{ provider.locations.first.state_code }}
+        </p>
+        {% endif %}
+        {% if provider.phone %}
+        <p class="search-result-meta mb-0">
+          <i class="fa-solid fa-phone" aria-hidden="true"></i>
+          <a href="tel:{{ provider.phone|cut:'-'|cut:' '|cut:'('|cut:')' }}">{{ provider.phone }}</a>
+        </p>
+        {% endif %}
+        <a class="search-result-action" href="{% url 'provider_detail' provider.slug %}">
+          <span>View provider details</span>
+          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </a>
+      </article>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="provider-results-empty">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <h3>No providers found</h3>
+        <p>Try removing a filter or broadening your search.</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <nav class="provider-pagination" aria-label="Provider result pages">
+    {% if page_obj.has_previous %}
+    <a class="provider-pagination-link provider-pagination-direction" href="?{% if pagination_query %}{{ pagination_query }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">
+      <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+      <span>Previous</span>
+    </a>
+    {% endif %}
+
+    <span class="provider-pagination-status">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+    <a class="provider-pagination-link provider-pagination-direction" href="?{% if pagination_query %}{{ pagination_query }}&amp;{% endif %}page={{ page_obj.next_page_number }}">
+      <span>Next</span>
+      <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+    </a>
+    {% endif %}
+  </nav>
+  {% endif %}
+</section>

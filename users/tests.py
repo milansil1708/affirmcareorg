@@ -110,6 +110,16 @@ class AuthenticationViewTests(TestCase):
         )
         self.assertNotContains(response, "auth-toast")
 
+    def test_login_explains_that_the_portal_is_for_providers(self):
+        response = self.client.get(reverse("users:login"))
+
+        self.assertContains(
+            response,
+            "This secure portal is for healthcare providers and their teams.",
+        )
+        self.assertContains(response, "You do not need an account to search")
+        self.assertContains(response, 'href="/#provider-search"')
+
     def test_failed_login_shows_form_error_and_error_toast(self):
         response = self.client.post(
             reverse("users:login"),

@@ -1,0 +1,41 @@
+{% extends "pages/index.html" %}
+{% load static %}
+
+{% block page_title %}Provider Results | Affirm Care{% endblock %}
+{% block meta_description %}Browse active LGBTQ+ and TGI-affirming providers matching your care, location, service, and accessibility needs.{% endblock %}
+{% block og_title %}Affirm Care Provider Results{% endblock %}
+{% block og_description %}Browse affirming providers matching your selected search filters.{% endblock %}
+{% block twitter_title %}Affirm Care Provider Results{% endblock %}
+{% block twitter_description %}Browse affirming providers matching your selected search filters.{% endblock %}
+{% block body_class %}provider-results-layout{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pages/css/provider_results.css' %}?v=20260720.2">
+{% endblock %}
+
+{% block content %}
+<main id="content" class="provider-results-page">
+  <section class="provider-results-hero">
+    <div class="container">
+      <div class="provider-results-hero-copy">
+        <span class="provider-results-kicker">Directory results</span>
+        <h1>Provider matches</h1>
+        <p>
+          {{ provider_count }} active provider{{ provider_count|pluralize }} matched your search.
+          Browse the complete list or refine your filters.
+        </p>
+      </div>
+      <a class="provider-results-refine" href="{% url 'provider_chat_pages:chat' %}">
+        <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+        <span>Refine search</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="provider-results-list-section">
+    <div class="container">
+      {% include "components/provider_results.html" %}
+    </div>
+  </section>
+</main>
+{% endblock %}

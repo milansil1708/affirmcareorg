@@ -30,7 +30,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
-<link rel="stylesheet" href="{% static 'pages/css/home.css' %}">
+<link rel="stylesheet" href="{% static 'pages/css/home.css' %}?v=20260720.3">
+<link rel="stylesheet" href="{% static 'pages/css/provider_results.css' %}?v=20260720.2">
 {% endblock %}
 
 {% block content %}
@@ -175,31 +176,7 @@
       {% endif %}
 
       {% if is_search %}
-      <h3 id="search-results" class="fw-bold mb-4 mt-5">Search Results</h3>
-      <div class="row search-results-row">
-        {% for provider in providers %}
-        <div class="search-result-col mb-4">
-          <div class="search-result-card">
-            <h4 class="search-result-title"><a href="{% url 'provider_detail' provider.slug %}" class="provider-card-link">{{ provider.name }}</a></h4>
-            <p class="search-result-services">
-              {% for org_service in provider.services.all %}
-              {{ org_service.service.name }}{% if not forloop.last %}, {% endif %}
-              {% empty %}
-              Services not listed
-              {% endfor %}
-            </p>
-            {% if provider.locations.first %}
-            <p class="search-result-meta"><i class="fa-solid fa-location-dot"></i>{{ provider.locations.first.city }}, {{ provider.locations.first.state_code }}</p>
-            {% endif %}
-            {% if provider.phone %}
-            <p class="search-result-meta mb-0"><i class="fa-solid fa-phone"></i><a href="tel:{{ provider.phone|cut:'-'|cut:' '|cut:'('|cut:')' }}">{{ provider.phone }}</a></p>
-            {% endif %}
-          </div>
-        </div>
-        {% empty %}
-        <div class="col-12"><p class="text-center text-muted">No providers found.</p></div>
-        {% endfor %}
-      </div>
+      {% include "components/provider_results.html" %}
       {% endif %}
     </div>
   </div>

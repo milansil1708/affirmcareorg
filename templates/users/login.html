@@ -4,10 +4,19 @@
 
 {% block auth_content %}
   <div class="auth-heading">
-    <p class="auth-eyebrow">Welcome back</p>
-    <h2>Log in to your account</h2>
-    <p>Enter your details to continue.</p>
+    <p class="auth-eyebrow">Provider portal</p>
+    <h2>Log in to manage your provider profile</h2>
+    <p>This secure portal is for healthcare providers and their teams.</p>
   </div>
+
+  <aside class="auth-audience-note" aria-labelledby="patient-guidance-title">
+    <span class="auth-audience-note-icon" aria-hidden="true">i</span>
+    <div>
+      <h3 id="patient-guidance-title">Looking for care?</h3>
+      <p>You do not need an account to search for an affirming provider.</p>
+      <a href="{% url 'home' %}#provider-search">Search the provider directory <span aria-hidden="true">&rarr;</span></a>
+    </div>
+  </aside>
 
   <form method="post" novalidate>
     {% csrf_token %}
@@ -35,12 +44,12 @@
     </div>
 
     <button type="submit" class="button button-3d button-rounded btn-block auth-submit">
-      Log in
+      Log in to provider portal
     </button>
   </form>
 
   <p class="auth-switch">
-    Need a provider account?
-    <a href="{% url 'users:register' %}">Register</a>
+    New provider or practice?
+    <a href="{% url 'users:register' %}">Create a provider account</a>
   </p>
 {% endblock %}

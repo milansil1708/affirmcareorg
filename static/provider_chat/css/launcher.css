@@ -1,0 +1,206 @@
+.provider-chat-launcher {
+  position: fixed;
+  right: 24px;
+  bottom: 94px;
+  z-index: 999;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  border: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(8, 70, 64, 0.24);
+  text-decoration: none;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.provider-chat-launcher:hover,
+.provider-chat-launcher:focus {
+  background: #ffffff;
+  text-decoration: none;
+  outline: 3px solid rgba(199, 95, 115, 0.2);
+  outline-offset: 2px;
+  box-shadow: 0 13px 30px rgba(8, 70, 64, 0.34);
+  transform: translateY(-2px);
+}
+
+.provider-chat-launcher-icon {
+  display: block;
+  width: 78px;
+  height: 78px;
+  max-width: none;
+  object-fit: contain;
+}
+
+.provider-chat-launcher.is-inviting {
+  animation: provider-chat-launcher-bounce 0.72s ease-in-out 2;
+}
+
+.provider-chat-invite {
+  position: fixed;
+  right: 24px;
+  bottom: 174px;
+  z-index: 998;
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  width: min(280px, calc(100vw - 48px));
+  padding: 12px 16px;
+  border: 1px solid rgba(10, 122, 111, 0.2);
+  border-radius: 15px 15px 4px 15px;
+  background: #ffffff;
+  color: #075f57;
+  box-shadow: 0 12px 32px rgba(8, 70, 64, 0.2);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: left;
+  text-decoration: none;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(10px) scale(0.96);
+  transform-origin: right bottom;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+}
+
+.provider-chat-invite::after {
+  position: absolute;
+  right: 19px;
+  bottom: -8px;
+  width: 15px;
+  height: 15px;
+  border-right: 1px solid rgba(10, 122, 111, 0.2);
+  border-bottom: 1px solid rgba(10, 122, 111, 0.2);
+  background: #ffffff;
+  content: "";
+  transform: rotate(45deg);
+}
+
+.provider-chat-invite:hover,
+.provider-chat-invite:focus {
+  color: #075f57;
+  text-decoration: none;
+  outline: 3px solid rgba(10, 122, 111, 0.16);
+  outline-offset: 2px;
+}
+
+.provider-chat-invite.is-visible {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.provider-chat-invite[hidden] {
+  display: none;
+}
+
+.provider-chat-invite-typing {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+}
+
+.provider-chat-invite.is-typing .provider-chat-invite-typing {
+  display: inline-flex;
+}
+
+.provider-chat-invite.is-typing .provider-chat-invite-text {
+  display: none;
+}
+
+.provider-chat-invite-typing span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0a7a6f;
+  animation: provider-chat-typing-dot 0.9s ease-in-out infinite;
+}
+
+.provider-chat-invite-typing span:nth-child(2) {
+  animation-delay: 0.14s;
+}
+
+.provider-chat-invite-typing span:nth-child(3) {
+  animation-delay: 0.28s;
+}
+
+@keyframes provider-chat-launcher-bounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  45% {
+    transform: translateY(-9px) scale(1.05);
+  }
+  70% {
+    transform: translateY(2px) scale(0.98);
+  }
+}
+
+@keyframes provider-chat-typing-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+.provider-chat-launcher-badge {
+  position: absolute;
+  top: -2px;
+  right: -1px;
+  width: 13px;
+  height: 13px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #55ba72;
+}
+
+@media (max-width: 767px) {
+  .provider-chat-launcher {
+    right: 16px;
+    bottom: 82px;
+    width: 60px;
+    height: 60px;
+  }
+
+  .provider-chat-launcher-icon {
+    width: 70px;
+    height: 70px;
+  }
+
+  .provider-chat-invite {
+    right: 16px;
+    bottom: 154px;
+    width: min(260px, calc(100vw - 32px));
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .provider-chat-launcher.is-inviting,
+  .provider-chat-invite-typing span {
+    animation: none;
+  }
+
+  .provider-chat-invite {
+    transition: none;
+  }
+}
+
+@media print {
+  .provider-chat-launcher,
+  .provider-chat-invite {
+    display: none;
+  }
+}

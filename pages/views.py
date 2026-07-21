@@ -1,14 +1,108 @@
 import random
 
-from django.db.models import Prefetch, Q
+from django.core.paginator import Paginator
 from django.views.generic import TemplateView
 
-from provider_organizations.models import (
-    AffirmingFeature,
-    ProviderLocation,
-    ProviderOrganization,
-    Service,
-)
+from provider_organizations.models import AffirmingFeature, ProviderLocation, Service
+from provider_search.services import SORT_EXPRESSIONS, public_provider_queryset, search_providers
+
+
+PROVIDER_RESULTS_PAGE_SIZE = 12
+TRUE_VALUES = {"1", "true", "yes", "on"}
+FALSE_VALUES = {"0", "false", "no", "off"}
+
+
+def _clean_values(query, *names):
+    values = []
+    for name in names:
+        values.extend(query.getlist(name))
+    return list(dict.fromkeys(value.strip() for value in values if value.strip()))
+
+
+def _boolean_filter(query, name):
+    if name not in query:
+        return None
+    value = query.get(name, "").strip().lower()
+    if value in TRUE_VALUES:
+        return True
+    if value in FALSE_VALUES:
+        return False
+    return None
+
+
+def provider_search_state(request):
+    query = request.GET
+    keyword = query.get("keyword", "").strip()
+    state = (query.get("state") or query.get("state_code") or "").strip()
+    city = query.get("city", "").strip()
+    zip_code = query.get("zip_code", "").strip()
+    service_slugs = _clean_values(query, "service", "service_slugs")
+    selected_features = _clean_values(
+        query,
+        "features",
+        "affirming_feature_codes",
+    )
+    org_types = _clean_values(query, "org_type", "org_types")
+    delivery_modes = _clean_values(query, "delivery_mode", "delivery_modes")
+    age_groups = _clean_values(query, "age_group", "age_groups")
+
+    filters = {}
+    scalar_filters = {
+        "keyword": keyword,
+        "state_code": state,
+        "city": city,
+        "zip_code": zip_code,
+        "verified_after": query.get("verified_after", "").strip(),
+    }
+    filters.update({key: value for key, value in scalar_filters.items() if value})
+
+    list_filters = {
+        "service_slugs": service_slugs,
+        "affirming_feature_codes": selected_features,
+        "org_types": org_types,
+        "delivery_modes": delivery_modes,
+        "age_groups": age_groups,
+    }
+    filters.update({key: value for key, value in list_filters.items() if value})
+
+    for name in (
+        "wheelchair_accessible",
+        "gender_neutral_restrooms",
+        "public_transit_access",
+        "has_booking_url",
+        "has_website_url",
+    ):
+        value = _boolean_filter(query, name)
+        if value is not None:
+            filters[name] = value
+
+    sort = query.get("sort", "name")
+    if sort not in SORT_EXPRESSIONS:
+        sort = "name"
+
+    return {
+        "filters": filters,
+        "sort": sort,
+        "is_search": bool(filters),
+        "selected_keyword": keyword,
+        "selected_state": state,
+        "selected_service": service_slugs[0] if service_slugs else "",
+        "selected_features": selected_features,
+    }
+
+
+def paginated_provider_context(request, providers):
+    page_obj = Paginator(providers, PROVIDER_RESULTS_PAGE_SIZE).get_page(
+        request.GET.get("page")
+    )
+    pagination_query = request.GET.copy()
+    pagination_query.pop("page", None)
+    return {
+        "providers": page_obj,
+        "page_obj": page_obj,
+        "provider_count": page_obj.paginator.count,
+        "pagination_query": pagination_query.urlencode(),
+    }
 
 
 class HomeView(TemplateView):
@@ -16,42 +110,23 @@ class HomeView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        search_state = provider_search_state(self.request)
 
-        keyword = self.request.GET.get("keyword", "").strip()
-        state = self.request.GET.get("state", "").strip()
-        service_slug = self.request.GET.get("service", "").strip()
-        selected_features = [f for f in self.request.GET.getlist("features") if f]
-        is_search = any([keyword, state, service_slug, selected_features])
-
-        base_queryset = ProviderOrganization.objects.filter(is_active=True).prefetch_related(
-            Prefetch(
-                "locations",
-                queryset=ProviderLocation.objects.order_by("-is_primary", "id"),
-            ),
-            Prefetch("services__service"),
-        )
-
-        if is_search:
-            providers = base_queryset
-            if keyword:
-                providers = providers.filter(
-                    Q(name__icontains=keyword) | Q(description__icontains=keyword)
-                )
-            if state:
-                providers = providers.filter(locations__state_code__iexact=state)
-            if service_slug:
-                providers = providers.filter(services__service__slug=service_slug)
-            if selected_features:
-                providers = providers.filter(
-                    affirming_features__feature__code__in=selected_features,
-                    affirming_features__value="yes",
-                )
-
-            providers = providers.distinct()
+        if search_state["is_search"]:
+            providers = search_providers(
+                search_state["filters"],
+                search_state["sort"],
+            )
+            result_context = paginated_provider_context(self.request, providers)
             featured_providers = None
         else:
-            providers = None
-            featured_providers = list(base_queryset.distinct())
+            result_context = {
+                "providers": None,
+                "page_obj": None,
+                "provider_count": 0,
+                "pagination_query": "",
+            }
+            featured_providers = list(public_provider_queryset().distinct())
             random.shuffle(featured_providers)
             featured_providers = featured_providers[:6]
 
@@ -63,20 +138,33 @@ class HomeView(TemplateView):
             .distinct()
         )
 
+        context.update(search_state)
+        context.update(result_context)
         context.update(
             {
-                "providers": providers,
                 "featured_providers": featured_providers,
                 "services": Service.objects.order_by("name"),
                 "affirming_features": AffirmingFeature.objects.order_by("label"),
                 "states": states,
-                "is_search": is_search,
-                "selected_keyword": keyword,
-                "selected_state": state,
-                "selected_service": service_slug,
-                "selected_features": selected_features,
+                "show_results_heading": True,
             }
         )
+        return context
+
+
+class ProviderResultsView(TemplateView):
+    template_name = "pages/provider_results.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        search_state = provider_search_state(self.request)
+        providers = search_providers(
+            search_state["filters"],
+            search_state["sort"],
+        )
+        context.update(search_state)
+        context.update(paginated_provider_context(self.request, providers))
+        context["show_results_heading"] = False
         return context
 
 

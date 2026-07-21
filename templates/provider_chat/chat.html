@@ -1,0 +1,143 @@
+{% extends "pages/index.html" %}
+{% load static %}
+
+{% block page_title %}Provider Assistant | Affirm Care{% endblock %}
+{% block meta_description %}Describe the affirming care you need and search the Affirm Care provider directory in a conversation.{% endblock %}
+{% block og_title %}Affirm Care Provider Assistant{% endblock %}
+{% block og_description %}Search public provider listings using everyday language.{% endblock %}
+{% block twitter_title %}Affirm Care Provider Assistant{% endblock %}
+{% block twitter_description %}Find LGBTQ+ and TGI-affirming providers conversationally.{% endblock %}
+{% block body_class %}provider-chat-layout{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'provider_chat/css/chat.css' %}?v=20260721.2">
+{% endblock %}
+
+{% block content %}
+<main id="content" class="provider-chat-page">
+  <div class="container clearfix">
+    <section
+      class="provider-chat-shell"
+      id="provider-chat-app"
+      data-api-url="{% url 'provider_chat:chat' %}"
+      data-provider-detail-template="{% url 'provider_detail' '__provider_slug__' %}"
+      data-provider-results-url="{% url 'provider_results' %}"
+      data-bot-icon-url="{% static 'pages/images/icons/affirm-care-bot.png' %}"
+      data-provider-slug="{{ request.GET.provider|default:'' }}"
+      data-conversation-ttl-ms="{{ chat_conversation_ttl_ms }}"
+    >
+      <div class="chat-scroll-region" id="chat-scroll-region">
+        <header class="provider-chat-header">
+          <div class="provider-chat-heading">
+            <span class="provider-chat-kicker">Provider discovery</span>
+            <h1>Affirm Care Assistant</h1>
+            <p>Describe the care, location, access needs, or affirming features that matter to you.</p>
+          </div>
+          <button
+            class="chat-icon-button chat-reset-button"
+            id="chat-reset-button"
+            type="button"
+            aria-label="Start a new provider search"
+            title="Start a new provider search"
+          >
+            <img
+                src="{% static 'pages/images/icons/edit.svg' %}"
+                alt=""
+                aria-hidden="true"
+            >
+            <span class="chat-reset-label">New search</span>
+          </button>
+        </header>
+
+        <div
+          class="chat-message-list"
+          id="chat-message-list"
+          aria-live="polite"
+          aria-label="Conversation"
+        ></div>
+
+        <section class="chat-suggestions" id="chat-suggestions" aria-labelledby="chat-suggestions-title">
+          <h2 id="chat-suggestions-title">Try asking</h2>
+          <div class="chat-suggestion-grid">
+          <button type="button" class="chat-suggestion" data-prompt="Find telehealth providers in New York">
+            <i class="fa-solid fa-laptop-medical" aria-hidden="true"></i>
+            <span>Telehealth in New York</span>
+          </button>
+          <button type="button" class="chat-suggestion" data-prompt="Show wheelchair-accessible clinics">
+            <i class="fa-solid fa-wheelchair-move" aria-hidden="true"></i>
+            <span>Accessible clinics</span>
+          </button>
+          <button type="button" class="chat-suggestion" data-prompt="Find providers offering youth services">
+            <i class="fa-solid fa-people-roof" aria-hidden="true"></i>
+            <span>Youth services</span>
+          </button>
+          <button type="button" class="chat-suggestion" data-prompt="Find providers that use informed consent">
+            <i class="fa-solid fa-shield-heart" aria-hidden="true"></i>
+            <span>Informed consent</span>
+          </button>
+          </div>
+        </section>
+
+        <section class="chat-results" id="chat-results" aria-labelledby="chat-results-title" hidden>
+          <div class="chat-results-header">
+            <div>
+              <span class="chat-results-label">Directory results</span>
+              <h2 id="chat-results-title">Provider matches</h2>
+            </div>
+            <a class="chat-see-all-link" id="chat-see-all-link" href="{% url 'provider_results' %}" hidden>
+              <span>See all</span>
+              <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </a>
+          </div>
+          <div class="chat-results-carousel">
+            <button class="chat-icon-button" id="chat-results-previous" type="button" aria-label="Previous providers" title="Previous providers">
+              <img
+                src="{% static 'pages/images/icons/left-arrow.svg' %}"
+                alt=""
+                aria-hidden="true"
+              >
+            </button>
+            <div class="chat-results-track" id="chat-results-track" tabindex="0"></div>
+            <button class="chat-icon-button" id="chat-results-next" type="button" aria-label="Next providers" title="Next providers">
+              <img
+                src="{% static 'pages/images/icons/right-arrow.svg' %}"
+                alt=""
+                aria-hidden="true"
+              >
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <div class="chat-composer-dock" id="chat-composer-dock">
+        <p class="chat-boundary-note">
+          This assistant searches public directory information. It cannot diagnose conditions, assess emergencies, or recommend treatment.
+        </p>
+        <form class="chat-composer" id="chat-composer" novalidate>
+          {% csrf_token %}
+          <label class="sr-only" for="chat-message-input">Message the provider assistant</label>
+          <textarea
+            id="chat-message-input"
+            name="message"
+            rows="1"
+            maxlength="2000"
+            placeholder="Ask about providers, locations, services, or access needs..."
+            autocomplete="off"
+            required
+          ></textarea>
+          <button class="chat-send-button" id="chat-send-button" type="submit" aria-label="Send message" title="Send message">
+            <img
+                src="{% static 'pages/images/icons/arrow.svg' %}"
+                alt="Send"
+            >
+          </button>
+        </form>
+      </div>
+    </section>
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'provider_chat/js/chat.js' %}?v=20260721.4"></script>
+{% endblock %}

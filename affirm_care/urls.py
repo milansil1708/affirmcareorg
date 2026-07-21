@@ -10,6 +10,15 @@ urlpatterns = [
     path("", include('pages.urls')),
     path("blogs/", include("blogs.urls")),
     path("providers-organizations/", include('provider_organizations.urls')),
+    path("api/providers/", include("provider_search.urls")),
+    path("api/chat/", include("provider_chat.urls")),
+    path(
+        "chat/",
+        include(
+            ("provider_chat.page_urls", "provider_chat_pages"),
+            namespace="provider_chat_pages",
+        ),
+    ),
 ]
 
 if settings.DEBUG:

@@ -346,64 +346,6 @@ h2 {
 .similar-providers-carousel .owl-item .item {
   width: 100%;
 }
-.search-results-row {
-  margin-left: -12px;
-  margin-right: -12px;
-}
-.search-result-col {
-  width: 100%;
-  padding-left: 12px;
-  padding-right: 12px;
-}
-.search-result-card {
-  height: 100%;
-  padding: 20px 22px;
-  border-radius: 22px;
-  border: 4px solid #d9b9a5;
-  background: #f4f4f4;
-}
-.search-result-title {
-  font-size: 19.2px;
-  font-weight: 800;
-  color: #005c52;
-  margin: 0 0 10px;
-}
-.search-result-services {
-  font-size: 14.4px;
-  color: #0f665e;
-  margin-bottom: 12px;
-}
-.search-result-meta {
-  font-size: 14.4px;
-  color: #2e2e2e;
-  margin-bottom: 8px;
-}
-.search-result-meta i {
-  width: 22px;
-  color: #2e2e2e;
-  margin-right: 4px;
-}
-.search-result-meta a {
-  color: #0f665e;
-}
-.provider-card-link {
-  color: #005c52;
-  text-decoration: none;
-}
-.provider-card-link:hover {
-  color: #0a5c56;
-  text-decoration: none;
-}
-@media (min-width: 768px) {
-  .search-result-col {
-    width: 50%;
-  }
-}
-@media (min-width: 1024px) {
-  .search-result-col {
-    width: 25%;
-  }
-}
 @media (max-width: 992px) {
   .who-we-are-intro {
     font-size: 18px;
