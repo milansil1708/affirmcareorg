@@ -114,6 +114,7 @@ class ProviderChatView(APIView):
                 status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+        result.pop("_pending_clarification", None)
         result["conversation_id"] = str(conversation.id)
         return Response(result, status=status.HTTP_200_OK)
 

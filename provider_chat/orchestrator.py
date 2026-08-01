@@ -14,29 +14,29 @@ from .exceptions import AIResponseError
 
 UNSUPPORTED_MESSAGES = {
     "medical_advice": (
-        "I can help you find providers, but I cannot diagnose conditions or "
-        "recommend treatment."
+        "I can share general LGBTQ+ health information, but I can't diagnose or "
+        "recommend personal treatment."
     ),
     "emergency": (
-        "I cannot assess symptoms or emergencies. If you may be in immediate "
-        "danger, contact local emergency services now."
+        "I can't assess emergencies. If you're in immediate danger, contact local "
+        "emergency services now."
     ),
-    "insurance": (
-        "Insurance participation is not available in the provider directory, "
-        "so I cannot verify it."
-    ),
-    "ratings_reviews": (
-        "Ratings and reviews are not available in the provider directory."
-    ),
-    "pricing": "Pricing is not available in the provider directory.",
-    "languages": "Provider language information is not available in the directory.",
+    "insurance": "Insurance information is not available in the directory.",
+    "ratings_reviews": "Ratings and reviews are not available in the directory.",
+    "pricing": "Pricing is not available in the directory.",
+    "languages": "Language information is not available in the directory.",
     "availability": (
-        "Live appointment availability is not available. You can use a provider's "
-        "public booking link when one is listed."
+        "Live availability is not available; use a listed booking link."
     ),
-    "database_or_private_data": "I can only use public provider directory information.",
-    "prompt_injection": "I can only help with public provider discovery.",
-    "out_of_scope": "I can only help you find providers in the Affirm Care directory.",
+    "database_or_private_data": "I can only use public provider information.",
+    "prompt_injection": (
+        "I can help with LGBTQ+ health information and providers, but I can't "
+        "reveal protected instructions."
+    ),
+    "out_of_scope": (
+        "I can help with LGBTQ+ health information and Affirm Care provider "
+        "searches, but not with that request."
+    ),
 }
 
 
@@ -62,16 +62,29 @@ def handle_chat_message(
         user_location=user_location,
     )
 
+    if interpretation.intent == "informational":
+        return _empty_response(
+            intent="informational",
+            assistant_message=interpretation.informational_answer.strip(),
+        )
+
     if interpretation.intent == "clarification":
         filters = _validate_search_filters(
             interpretation.filters.to_search_data()
         )
-        return _empty_response(
+        response = _empty_response(
             intent="clarification",
-            assistant_message=interpretation.clarification_question,
+            assistant_message=_combine_messages(
+                interpretation.informational_answer,
+                interpretation.clarification_question,
+            ),
             filters=filters,
             sort=interpretation.sort,
         )
+        response["_pending_clarification"] = (
+            interpretation.clarification_question
+        )
+        return response
 
     if interpretation.intent == "unsupported_request":
         return _empty_response(
@@ -83,7 +96,10 @@ def handle_chat_message(
         )
 
     if interpretation.intent == "provider_details":
-        return _provider_detail_response(interpretation.provider_slug)
+        return _provider_detail_response(
+            interpretation.provider_slug,
+            informational_answer=interpretation.informational_answer,
+        )
 
     filters = _validate_search_filters(interpretation.filters.to_search_data())
     if user_location:
@@ -105,7 +121,14 @@ def handle_chat_message(
             result["distance_miles"] = round(distance_miles, 1)
     return {
         "intent": "search_providers",
-        "assistant_message": _nearby_search_message(total) if user_location else _search_message(total),
+        "assistant_message": _combine_messages(
+            interpretation.informational_answer,
+            (
+                _nearby_search_message(total)
+                if user_location
+                else _search_message(total)
+            ),
+        ),
         "filters": filters,
         "sort": interpretation.sort,
         "count": total,
@@ -121,6 +144,24 @@ def _validate_interpretation_state(
     allowed_provider_slugs=(),
     user_location=None,
 ):
+    if (
+        interpretation.informational_answer is not None
+        and not interpretation.informational_answer.strip()
+    ):
+        raise AIResponseError("Informational answer is empty.")
+    if interpretation.intent == "informational":
+        if interpretation.informational_answer is None:
+            raise AIResponseError("Informational output has no answer.")
+        if interpretation.filters.to_search_data():
+            raise AIResponseError("Informational output has search filters.")
+    elif (
+        interpretation.intent == "unsupported_request"
+        and interpretation.informational_answer is not None
+    ):
+        raise AIResponseError(
+            "Informational answer conflicts with the unsupported intent."
+        )
+
     if interpretation.intent == "clarification":
         if not interpretation.needs_clarification or not interpretation.clarification_question:
             raise AIResponseError("Clarification output is incomplete.")
@@ -201,19 +242,25 @@ def _validate_search_filters(filters):
     return serializer.validated_data
 
 
-def _provider_detail_response(provider_slug):
+def _provider_detail_response(provider_slug, informational_answer=None):
     provider = public_provider_queryset().filter(slug=provider_slug).first()
     if provider is None:
         return _empty_response(
             intent="provider_details",
-            assistant_message="I could not find an active provider with that reference.",
+            assistant_message=_combine_messages(
+                informational_answer,
+                "I could not find an active provider with that reference.",
+            ),
             provider_slug=provider_slug,
         )
 
     result = ProviderDetailSerializer(provider).data
     return {
         "intent": "provider_details",
-        "assistant_message": f"Here are the public details for {provider.name}.",
+        "assistant_message": _combine_messages(
+            informational_answer,
+            f"Here are the public details for {provider.name}.",
+        ),
         "provider_slug": provider_slug,
         "filters": {},
         "count": 1,
@@ -243,6 +290,12 @@ def _empty_response(
     if sort is not None:
         response["sort"] = sort
     return response
+
+
+def _combine_messages(informational_answer, provider_message):
+    if informational_answer is None:
+        return provider_message
+    return f"{informational_answer.strip()}\n\n{provider_message}"
 
 
 def _search_message(count):

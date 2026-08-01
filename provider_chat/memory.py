@@ -91,7 +91,10 @@ def record_successful_turn(conversation, user_message, result):
         )
         conversation.current_sort = result.get("sort", "name")
         conversation.pending_clarification = (
-            result["assistant_message"]
+            result.get(
+                "_pending_clarification",
+                result["assistant_message"],
+            )
             if intent == ChatTurn.Intent.CLARIFICATION
             else ""
         )
@@ -186,4 +189,3 @@ def _trim_old_turns(conversation):
         .values_list("id", flat=True)[:limit]
     )
     conversation.turns.exclude(id__in=retained_ids).delete()
-

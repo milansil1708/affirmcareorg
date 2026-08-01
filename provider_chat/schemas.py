@@ -20,6 +20,7 @@ SortOption = Literal[
     "-last_verified_at",
 ]
 ChatIntent = Literal[
+    "informational",
     "search_providers",
     "provider_details",
     "clarification",
@@ -73,3 +74,4 @@ class ChatInterpretation(BaseModel):
     needs_clarification: bool
     clarification_question: str | None = Field(max_length=300)
     unsupported_category: UnsupportedCategory | None
+    informational_answer: str | None

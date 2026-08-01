@@ -48,6 +48,7 @@ class ChatConversation(models.Model):
 
 class ChatTurn(models.Model):
     class Intent(models.TextChoices):
+        INFORMATIONAL = "informational", "Informational"
         SEARCH_PROVIDERS = "search_providers", "Search providers"
         PROVIDER_DETAILS = "provider_details", "Provider details"
         CLARIFICATION = "clarification", "Clarification"
@@ -70,4 +71,3 @@ class ChatTurn(models.Model):
                 name="chat_turn_created_idx",
             ),
         )
-

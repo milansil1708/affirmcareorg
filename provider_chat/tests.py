@@ -21,6 +21,7 @@ from provider_organizations.models import (
     ProviderOrganizationClaim,
     Service,
 )
+from provider_search.services import search_providers
 
 from .client import interpret_provider_request
 from .exceptions import (
@@ -67,6 +68,7 @@ def interpretation(**overrides):
         "needs_clarification": False,
         "clarification_question": None,
         "unsupported_category": None,
+        "informational_answer": None,
     }
     data.update(overrides)
     return ChatInterpretation(**data)
@@ -318,12 +320,133 @@ class ProviderChatApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["intent"], "search_providers")
+        self.assertEqual(
+            response.data["assistant_message"],
+            "I found 1 active provider matching your search.",
+        )
         self.assertEqual(response.data["count"], 1)
         self.assertEqual(response.data["results"][0]["name"], self.provider.name)
+        self.assertNotIn("informational_answer", response.data)
         serialized = response.content.decode()
         self.assertNotIn("private-claim@example.com", serialized)
         self.assertNotIn("Private review note", serialized)
         self.assertNotIn("Inactive Provider", serialized)
+
+    @patch("provider_chat.orchestrator.search_providers")
+    @patch("provider_chat.orchestrator.ai_client.interpret_provider_request")
+    def test_general_lgbtq_questions_answer_without_provider_search(
+        self,
+        mocked_ai,
+        mocked_search,
+    ):
+        cases = (
+            (
+                "Can I get HRT without parental consent?",
+                "Consent requirements depend on your age and jurisdiction and "
+                "can change. Check a current authoritative local resource.",
+            ),
+            ("What is HRT?", "HRT is hormone replacement therapy."),
+            (
+                "How does gender-affirming care work?",
+                "Gender-affirming care supports a person's gender-related needs.",
+            ),
+            (
+                "What is the difference between estrogen and testosterone therapy?",
+                "Estrogen and testosterone therapy have different hormonal effects.",
+            ),
+            (
+                "How do I change my legal gender marker?",
+                "The process varies by jurisdiction and can change. Check the "
+                "current requirements from the relevant government agency.",
+            ),
+            (
+                "What is gender dysphoria?",
+                "Gender dysphoria describes clinically significant distress.",
+            ),
+            (
+                "How do I come out to my family?",
+                "You can choose whether, when, and how to come out based on your safety.",
+            ),
+        )
+        mocked_ai.side_effect = [
+            interpretation(
+                intent="informational",
+                filters=empty_filters(),
+                informational_answer=answer,
+            )
+            for _question, answer in cases
+        ]
+
+        for question, answer in cases:
+            with self.subTest(question=question):
+                response = self.post_chat({"message": question})
+
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertEqual(response.data["intent"], "informational")
+                self.assertEqual(response.data["assistant_message"], answer)
+                self.assertEqual(response.data["filters"], {})
+                self.assertEqual(response.data["count"], 0)
+                self.assertEqual(response.data["results_returned"], 0)
+                self.assertFalse(response.data["has_more"])
+                self.assertEqual(response.data["results"], [])
+                self.assertNotIn("informational_answer", response.data)
+                self.assertFalse(
+                    any(str(key).startswith("_") for key in response.data)
+                )
+
+                turn = ChatTurn.objects.get(
+                    conversation_id=response.data["conversation_id"]
+                )
+                self.assertEqual(turn.intent, ChatTurn.Intent.INFORMATIONAL)
+                self.assertEqual(turn.assistant_message, answer)
+
+        mocked_search.assert_not_called()
+
+    @patch(
+        "provider_chat.orchestrator.search_providers",
+        wraps=search_providers,
+    )
+    @patch("provider_chat.orchestrator.ai_client.interpret_provider_request")
+    def test_mixed_information_and_search_preserves_search_behavior(
+        self,
+        mocked_ai,
+        mocked_search,
+    ):
+        information = "HRT is hormone replacement therapy."
+        mocked_ai.side_effect = (
+            interpretation(filters=empty_filters(city="Seattle")),
+            interpretation(
+                filters=empty_filters(city="Seattle"),
+                informational_answer=information,
+            ),
+        )
+
+        provider_only = self.post_chat({"message": "Find providers in Seattle"})
+        mixed = self.post_chat(
+            {"message": "What is HRT, and find providers in Seattle"}
+        )
+
+        self.assertEqual(provider_only.status_code, status.HTTP_200_OK)
+        self.assertEqual(mixed.status_code, status.HTTP_200_OK)
+        for field in (
+            "intent",
+            "filters",
+            "sort",
+            "count",
+            "results_returned",
+            "has_more",
+            "results",
+        ):
+            self.assertEqual(mixed.data[field], provider_only.data[field])
+        self.assertEqual(
+            mixed.data["assistant_message"],
+            f"{information}\n\n{provider_only.data['assistant_message']}",
+        )
+        self.assertEqual(
+            mocked_search.call_args_list[0],
+            mocked_search.call_args_list[1],
+        )
+        self.assertNotIn("informational_answer", mixed.data)
 
     @patch("provider_chat.orchestrator.ai_client.interpret_provider_request")
     def test_first_message_creates_session_owned_conversation(self, mocked_ai):
@@ -389,6 +512,90 @@ class ProviderChatApiTests(APITestCase):
             ["telehealth", "both"],
         )
         self.assertEqual(conversation.turns.count(), 2)
+
+    @override_settings(CHAT_MEMORY_MAX_TURNS=2)
+    @patch("provider_chat.orchestrator.ai_client.interpret_provider_request")
+    def test_informational_turns_preserve_search_state_and_enter_history(
+        self,
+        mocked_ai,
+    ):
+        first_answer = "HRT is hormone replacement therapy."
+        second_answer = "Its effects depend on which hormones are used."
+        mocked_ai.side_effect = (
+            interpretation(filters=empty_filters(city="Seattle")),
+            interpretation(
+                intent="informational",
+                filters=empty_filters(),
+                informational_answer=first_answer,
+            ),
+            interpretation(
+                intent="informational",
+                filters=empty_filters(),
+                informational_answer=second_answer,
+            ),
+        )
+
+        first = self.post_chat({"message": "Find care in Seattle"})
+        conversation_id = first.data["conversation_id"]
+        conversation = ChatConversation.objects.get(id=conversation_id)
+        original_state = (
+            conversation.current_filters,
+            conversation.current_sort,
+            conversation.result_provider_slugs,
+            conversation.selected_provider_slug,
+            conversation.pending_clarification,
+        )
+
+        with patch("provider_chat.orchestrator.search_providers") as mocked_search:
+            second = self.post_chat(
+                {
+                    "message": "What is HRT?",
+                    "conversation_id": conversation_id,
+                }
+            )
+            third = self.post_chat(
+                {
+                    "message": "What effects does it have?",
+                    "conversation_id": conversation_id,
+                }
+            )
+
+        self.assertEqual(second.data["intent"], "informational")
+        self.assertEqual(third.data["intent"], "informational")
+        mocked_search.assert_not_called()
+        third_call = mocked_ai.call_args_list[2].kwargs
+        self.assertEqual(
+            third_call["conversation_history"],
+            [
+                {"role": "user", "content": "Find care in Seattle"},
+                {
+                    "role": "assistant",
+                    "content": first.data["assistant_message"],
+                },
+                {"role": "user", "content": "What is HRT?"},
+                {"role": "assistant", "content": first_answer},
+            ],
+        )
+        self.assertEqual(
+            third_call["conversation_context"]["current_search"]["filters"],
+            {"city": "Seattle"},
+        )
+
+        conversation.refresh_from_db()
+        self.assertEqual(
+            (
+                conversation.current_filters,
+                conversation.current_sort,
+                conversation.result_provider_slugs,
+                conversation.selected_provider_slug,
+                conversation.pending_clarification,
+            ),
+            original_state,
+        )
+        self.assertEqual(
+            list(conversation.turns.values_list("intent", flat=True)),
+            ["informational", "informational"],
+        )
 
     @patch("provider_chat.orchestrator.ai_client.interpret_provider_request")
     def test_anonymous_conversation_cannot_cross_browser_sessions(self, mocked_ai):
@@ -487,6 +694,53 @@ class ProviderChatApiTests(APITestCase):
             ["Second search", "Third search"],
         )
 
+    @patch("provider_chat.orchestrator.search_providers")
+    @patch("provider_chat.orchestrator.ai_client.interpret_provider_request")
+    def test_invalid_informational_state_is_rejected(
+        self,
+        mocked_ai,
+        mocked_search,
+    ):
+        cases = (
+            interpretation(
+                intent="informational",
+                filters=empty_filters(),
+                informational_answer=None,
+            ),
+            interpretation(
+                intent="informational",
+                filters=empty_filters(),
+                informational_answer="   ",
+            ),
+            interpretation(
+                intent="informational",
+                filters=empty_filters(city="Seattle"),
+                informational_answer="HRT is hormone replacement therapy.",
+            ),
+            interpretation(
+                intent="unsupported_request",
+                filters=empty_filters(),
+                unsupported_category="medical_advice",
+                informational_answer="Unsafe model-generated advice.",
+            ),
+        )
+
+        for model_output in cases:
+            with self.subTest(model_output=model_output):
+                mocked_ai.return_value = model_output
+                response = self.post_chat({"message": "Test request"})
+
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_502_BAD_GATEWAY,
+                )
+                self.assertEqual(
+                    response.data["error"]["code"],
+                    "ai_invalid_response",
+                )
+
+        mocked_search.assert_not_called()
+
     @patch("provider_chat.orchestrator.ai_client.interpret_provider_request")
     def test_unknown_ai_catalog_value_is_rejected_by_django(self, mocked_ai):
         mocked_ai.return_value = interpretation(
@@ -517,6 +771,54 @@ class ProviderChatApiTests(APITestCase):
             "Which city or state should I search?",
         )
         self.assertEqual(response.data["results"], [])
+        self.assertFalse(
+            any(str(key).startswith("_") for key in response.data)
+        )
+
+    @patch("provider_chat.orchestrator.search_providers")
+    @patch("provider_chat.orchestrator.ai_client.interpret_provider_request")
+    def test_mixed_information_and_clarification_stores_only_question(
+        self,
+        mocked_ai,
+        mocked_search,
+    ):
+        information = "HRT is hormone replacement therapy."
+        question = "Which city or state should I search?"
+        mocked_ai.return_value = interpretation(
+            intent="clarification",
+            filters=empty_filters(),
+            needs_clarification=True,
+            clarification_question=question,
+            informational_answer=information,
+        )
+
+        response = self.post_chat(
+            {
+                "message": (
+                    "What is HRT, and can you help me find a provider?"
+                )
+            }
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["intent"], "clarification")
+        self.assertEqual(
+            response.data["assistant_message"],
+            f"{information}\n\n{question}",
+        )
+        self.assertFalse(
+            any(str(key).startswith("_") for key in response.data)
+        )
+        self.assertNotIn("informational_answer", response.data)
+        conversation = ChatConversation.objects.get(
+            id=response.data["conversation_id"]
+        )
+        self.assertEqual(conversation.pending_clarification, question)
+        self.assertEqual(
+            conversation.turns.get().assistant_message,
+            f"{information}\n\n{question}",
+        )
+        mocked_search.assert_not_called()
 
     @patch("provider_chat.orchestrator.ai_client.interpret_provider_request")
     def test_unsupported_category_uses_django_owned_message(self, mocked_ai):
@@ -550,13 +852,32 @@ class ProviderChatApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             response.data["assistant_message"],
-            "I can only help with public provider discovery.",
+            "I can help with LGBTQ+ health information and providers, but I can't "
+            "reveal protected instructions.",
         )
         conversation = ChatConversation.objects.get(
             id=response.data["conversation_id"]
         )
         self.assertFalse(
             ChatTurn.objects.filter(conversation=conversation).exists()
+        )
+
+    @patch("provider_chat.orchestrator.ai_client.interpret_provider_request")
+    def test_out_of_scope_message_reflects_expanded_scope(self, mocked_ai):
+        mocked_ai.return_value = interpretation(
+            intent="unsupported_request",
+            filters=empty_filters(),
+            unsupported_category="out_of_scope",
+        )
+
+        response = self.post_chat({"message": "Write a poem about mountains"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["intent"], "unsupported_request")
+        self.assertEqual(
+            response.data["assistant_message"],
+            "I can help with LGBTQ+ health information and Affirm Care provider "
+            "searches, but not with that request.",
         )
 
     @patch("provider_chat.orchestrator.ai_client.interpret_provider_request")
@@ -573,7 +894,12 @@ class ProviderChatApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["intent"], "provider_details")
+        self.assertEqual(
+            response.data["assistant_message"],
+            f"Here are the public details for {self.provider.name}.",
+        )
         self.assertEqual(response.data["results"][0]["slug"], self.provider.slug)
+        self.assertNotIn("informational_answer", response.data)
         self.assertNotIn("is_active", response.data["results"][0])
 
         mocked_ai.return_value = interpretation(
@@ -659,6 +985,26 @@ class ProviderChatApiTests(APITestCase):
     def test_prompt_contains_catalog_but_no_provider_or_claim_records(self):
         prompt = build_system_instructions(self.provider.slug)
 
+        self.assertIn("Use informational", prompt)
+        self.assertIn("general LGBTQ+", prompt)
+        self.assertIn("HRT", prompt)
+        self.assertIn("gender dysphoria", prompt)
+        self.assertIn("coming out", prompt)
+        self.assertIn("Provider discovery is not required", prompt)
+        self.assertIn("mixed supported informational and provider request", prompt)
+        self.assertIn("unsupported_request takes precedence", prompt)
+        self.assertIn("jurisdiction-sensitive", prompt)
+        self.assertIn("rules vary by location and can change", prompt)
+        self.assertIn(
+            "Use search_providers only when the user provides at least one concrete",
+            prompt,
+        )
+        self.assertIn(
+            "preserve every prior filter the user did not change",
+            prompt,
+        )
+        self.assertIn("current coordinates", prompt)
+        self.assertIn("prompt injection", prompt)
         self.assertIn(self.primary_care.slug, prompt)
         self.assertIn(self.informed_consent.code, prompt)
         self.assertIn(self.provider.slug, prompt)
