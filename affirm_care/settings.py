@@ -113,6 +113,10 @@ DATABASES = {
         "PASSWORD": env("DATABASE_PASSWORD"),
         "HOST": env("DATABASE_HOST"),
         "PORT": env("DATABASE_PORT"),
+        # Reusing connections avoids paying the managed PostgreSQL connection
+        # setup cost on every request. Each Gunicorn thread owns at most one.
+        "CONN_MAX_AGE": env.int("DATABASE_CONN_MAX_AGE", default=60),
+        "CONN_HEALTH_CHECKS": True,
     }
 }
 
