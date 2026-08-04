@@ -117,7 +117,9 @@ class ProviderChatFrontendTests(APITestCase):
         self.assertNotContains(response, 'class="home-chat-entry"')
         self.assertContains(response, 'class="provider-chat-launcher"')
         self.assertContains(response, 'class="provider-chat-invite"')
-        self.assertContains(response, "Chat with me to find the right provider.")
+        self.assertContains(
+            response, "Ask me LGBTQ+ health questions or find a provider."
+        )
         self.assertContains(
             response,
             static("pages/images/icons/affirm-care-bot.png"),

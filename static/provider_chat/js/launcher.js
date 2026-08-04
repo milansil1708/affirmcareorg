@@ -7,7 +7,8 @@
 
   if (!launcher || !invite || !inviteText) return;
 
-  var message = invite.dataset.message || "Chat with me to find the right provider.";
+  var message =
+    invite.dataset.message || "Ask me LGBTQ+ health questions or find a provider.";
   var prefersReducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)"
   ).matches;
