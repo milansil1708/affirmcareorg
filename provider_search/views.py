@@ -16,6 +16,7 @@ from .serializers import (
 from .services import (
     get_public_directory_catalog,
     public_provider_queryset,
+    public_provider_summary_queryset,
     search_providers,
 )
 
@@ -31,6 +32,7 @@ class ProviderSearchView(APIView):
         providers = search_providers(
             request_serializer.validated_data["filters"],
             request_serializer.validated_data["sort"],
+            queryset=public_provider_summary_queryset(),
         )
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(providers, request, view=self)

@@ -168,6 +168,20 @@ class OrganizationServiceSerializer(serializers.ModelSerializer):
         fields = ("service", "delivery_mode", "age_group", "note")
 
 
+class ProviderLocationSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProviderLocation
+        fields = ("city", "state_code")
+
+
+class OrganizationServiceSummarySerializer(serializers.ModelSerializer):
+    service = ServiceSerializer(read_only=True)
+
+    class Meta:
+        model = OrganizationService
+        fields = ("service",)
+
+
 class AffirmingFeatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = AffirmingFeature
@@ -190,8 +204,30 @@ class ProviderFeatureSerializer(serializers.ModelSerializer):
 
 class ProviderSummarySerializer(serializers.ModelSerializer):
     primary_location = serializers.SerializerMethodField()
+    services = OrganizationServiceSummarySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ProviderOrganization
+        fields = (
+            "slug",
+            "name",
+            "org_type",
+            "primary_location",
+            "services",
+        )
+
+    def get_primary_location(self, organization):
+        locations = list(organization.locations.all())
+        if not locations:
+            return None
+        return ProviderLocationSummarySerializer(locations[0]).data
+
+
+class ProviderDetailSerializer(serializers.ModelSerializer):
+    primary_location = serializers.SerializerMethodField()
     services = OrganizationServiceSerializer(many=True, read_only=True)
     affirming_features = ProviderFeatureSerializer(many=True, read_only=True)
+    locations = ProviderLocationSerializer(many=True, read_only=True)
 
     class Meta:
         model = ProviderOrganization
@@ -208,6 +244,7 @@ class ProviderSummarySerializer(serializers.ModelSerializer):
             "primary_location",
             "services",
             "affirming_features",
+            "locations",
         )
 
     def get_primary_location(self, organization):
@@ -215,10 +252,3 @@ class ProviderSummarySerializer(serializers.ModelSerializer):
         if not locations:
             return None
         return ProviderLocationSerializer(locations[0]).data
-
-
-class ProviderDetailSerializer(ProviderSummarySerializer):
-    locations = ProviderLocationSerializer(many=True, read_only=True)
-
-    class Meta(ProviderSummarySerializer.Meta):
-        fields = ProviderSummarySerializer.Meta.fields + ("locations",)

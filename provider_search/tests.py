@@ -164,6 +164,17 @@ class ProviderSearchApiTests(APITestCase):
         self.assertNotIn("Private administrator note", serialized)
         for private_field in ("user", "is_active", "claim_requests"):
             self.assertNotIn(private_field, response.data["results"][0])
+        result = response.data["results"][0]
+        self.assertEqual(
+            set(result),
+            {"slug", "name", "org_type", "primary_location", "services"},
+        )
+        self.assertEqual(set(result["primary_location"]), {"city", "state_code"})
+        self.assertEqual(set(result["services"][0]), {"service"})
+        self.assertEqual(
+            set(result["services"][0]["service"]),
+            {"slug", "name"},
+        )
 
     def test_rejects_unknown_top_level_and_filter_fields(self):
         top_level = self.client.post(
@@ -346,4 +357,24 @@ class ProviderSearchApiTests(APITestCase):
             response = self.search()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertLessEqual(len(queries), 6)
+        self.assertLessEqual(len(queries), 4)
+        sql = "\n".join(query["sql"].lower() for query in queries)
+        self.assertNotIn("providerfeature", sql)
+        self.assertNotIn("evidence_note", sql)
+        self.assertNotIn("description", sql)
+
+    def test_search_payload_excludes_large_detail_only_values(self):
+        long_private_detail = "detail-only-value-" * 1000
+        ProviderOrganization.objects.filter(id=self.seattle_provider.id).update(
+            description=long_private_detail
+        )
+        ProviderFeature.objects.filter(provider=self.seattle_provider).update(
+            evidence_note=long_private_detail,
+            source_url="https://example.com/detail-only-evidence",
+        )
+
+        response = self.search()
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn(long_private_detail, response.content.decode())
+        self.assertLess(len(response.content), 1500)

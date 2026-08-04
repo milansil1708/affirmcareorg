@@ -79,8 +79,6 @@ class ProviderChatView(APIView):
                 "unsupported_category": "out_of_scope",
                 "filters": {},
                 "count": 0,
-                "results_returned": 0,
-                "has_more": False,
                 "results": [],
             }
         except AIConfigurationError:

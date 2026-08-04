@@ -4,11 +4,10 @@ from django.db.models.functions import ACos, Cast, Cos, Greatest, Least, Radians
 from rest_framework.exceptions import ValidationError
 
 from provider_search.serializers import (
-    ProviderDetailSerializer,
     ProviderSearchFilterSerializer,
     ProviderSummarySerializer,
 )
-from provider_search.services import public_provider_queryset, search_providers
+from provider_search.services import public_provider_summary_queryset, search_providers
 
 from . import client as ai_client
 from .exceptions import AIResponseError
@@ -112,7 +111,11 @@ def handle_chat_message(
         )
         providers = [provider for provider, _distance in providers_with_distance]
     else:
-        queryset = search_providers(filters, interpretation.sort)
+        queryset = search_providers(
+            filters,
+            interpretation.sort,
+            queryset=public_provider_summary_queryset(),
+        )
         total = queryset.count()
         providers = list(queryset[: settings.CHAT_MAX_RESULTS])
     results = ProviderSummarySerializer(providers, many=True).data
@@ -132,8 +135,6 @@ def handle_chat_message(
         "filters": filters,
         "sort": interpretation.sort,
         "count": total,
-        "results_returned": len(results),
-        "has_more": total > len(results),
         "results": results,
     }
 
@@ -216,7 +217,11 @@ def _nearby_providers(filters, sort, user_location):
     distance_miles = Value(3958.7613) * ACos(clamped_angle)
 
     ranked_providers = (
-        search_providers(filters, sort)
+        search_providers(
+            filters,
+            sort,
+            queryset=public_provider_summary_queryset(),
+        )
         .prefetch_related(None)
         .order_by()
         .filter(
@@ -240,7 +245,7 @@ def _nearby_providers(filters, sort, user_location):
     selected_ids = [provider_id for provider_id, _distance in selected]
     loaded_providers = {
         provider.id: provider
-        for provider in public_provider_queryset().filter(id__in=selected_ids)
+        for provider in public_provider_summary_queryset().filter(id__in=selected_ids)
     }
     return total, [
         (loaded_providers[provider_id], distance)
@@ -259,7 +264,7 @@ def _validate_search_filters(filters):
 
 
 def _provider_detail_response(provider_slug, informational_answer=None):
-    provider = public_provider_queryset().filter(slug=provider_slug).first()
+    provider = public_provider_summary_queryset().filter(slug=provider_slug).first()
     if provider is None:
         return _empty_response(
             intent="provider_details",
@@ -270,7 +275,7 @@ def _provider_detail_response(provider_slug, informational_answer=None):
             provider_slug=provider_slug,
         )
 
-    result = ProviderDetailSerializer(provider).data
+    result = ProviderSummarySerializer(provider).data
     return {
         "intent": "provider_details",
         "assistant_message": _combine_messages(
@@ -278,10 +283,7 @@ def _provider_detail_response(provider_slug, informational_answer=None):
             f"Here are the public details for {provider.name}.",
         ),
         "provider_slug": provider_slug,
-        "filters": {},
         "count": 1,
-        "results_returned": 1,
-        "has_more": False,
         "results": [result],
     }
 
@@ -298,8 +300,6 @@ def _empty_response(
         "assistant_message": assistant_message,
         "filters": filters or {},
         "count": 0,
-        "results_returned": 0,
-        "has_more": False,
         "results": [],
         **extra,
     }

@@ -243,7 +243,7 @@ class ProviderChatApiTests(APITestCase):
         self.assertEqual(cached_suggestions, suggestions)
         self.assertEqual(len(cached_queries), 0)
 
-    def test_nearby_search_only_loads_full_relations_for_bounded_results(self):
+    def test_nearby_search_only_loads_summary_relations_for_bounded_results(self):
         for index in range(15):
             provider = ProviderOrganization.objects.create(
                 name=f"Nearby Provider {index:02d}",
@@ -270,7 +270,10 @@ class ProviderChatApiTests(APITestCase):
 
         self.assertEqual(total, 15)
         self.assertEqual(len(results), settings.CHAT_MAX_RESULTS)
-        self.assertLessEqual(len(queries), 6)
+        self.assertLessEqual(len(queries), 5)
+        sql = "\n".join(query["sql"].lower() for query in queries)
+        self.assertNotIn("providerfeature", sql)
+        self.assertNotIn("description", sql)
 
     @patch("provider_chat.views.handle_chat_message")
     def test_location_coordinates_are_passed_to_provider_search(self, mocked_handler):
@@ -280,8 +283,6 @@ class ProviderChatApiTests(APITestCase):
             "filters": {},
             "sort": "name",
             "count": 0,
-            "results_returned": 0,
-            "has_more": False,
             "results": [],
         }
 
@@ -361,7 +362,14 @@ class ProviderChatApiTests(APITestCase):
             "I found 1 active provider matching your search.",
         )
         self.assertEqual(response.data["count"], 1)
-        self.assertEqual(response.data["results"][0]["name"], self.provider.name)
+        result = response.data["results"][0]
+        self.assertEqual(result["name"], self.provider.name)
+        self.assertEqual(
+            set(result),
+            {"slug", "name", "org_type", "primary_location", "services"},
+        )
+        self.assertNotIn("results_returned", response.data)
+        self.assertNotIn("has_more", response.data)
         self.assertNotIn("informational_answer", response.data)
         serialized = response.content.decode()
         self.assertNotIn("private-claim@example.com", serialized)
@@ -422,9 +430,9 @@ class ProviderChatApiTests(APITestCase):
                 self.assertEqual(response.data["assistant_message"], answer)
                 self.assertEqual(response.data["filters"], {})
                 self.assertEqual(response.data["count"], 0)
-                self.assertEqual(response.data["results_returned"], 0)
-                self.assertFalse(response.data["has_more"])
                 self.assertEqual(response.data["results"], [])
+                self.assertNotIn("results_returned", response.data)
+                self.assertNotIn("has_more", response.data)
                 self.assertNotIn("informational_answer", response.data)
                 self.assertFalse(
                     any(str(key).startswith("_") for key in response.data)
@@ -469,8 +477,6 @@ class ProviderChatApiTests(APITestCase):
             "filters",
             "sort",
             "count",
-            "results_returned",
-            "has_more",
             "results",
         ):
             self.assertEqual(mixed.data[field], provider_only.data[field])
@@ -478,9 +484,11 @@ class ProviderChatApiTests(APITestCase):
             mixed.data["assistant_message"],
             f"{information}\n\n{provider_only.data['assistant_message']}",
         )
+        first_call, second_call = mocked_search.call_args_list
+        self.assertEqual(first_call.args, second_call.args)
         self.assertEqual(
-            mocked_search.call_args_list[0],
-            mocked_search.call_args_list[1],
+            str(first_call.kwargs["queryset"].query),
+            str(second_call.kwargs["queryset"].query),
         )
         self.assertNotIn("informational_answer", mixed.data)
 
@@ -935,6 +943,10 @@ class ProviderChatApiTests(APITestCase):
             f"Here are the public details for {self.provider.name}.",
         )
         self.assertEqual(response.data["results"][0]["slug"], self.provider.slug)
+        self.assertEqual(
+            set(response.data["results"][0]),
+            {"slug", "name", "org_type", "primary_location", "services"},
+        )
         self.assertNotIn("informational_answer", response.data)
         self.assertNotIn("is_active", response.data["results"][0])
 
@@ -969,7 +981,7 @@ class ProviderChatApiTests(APITestCase):
 
     @patch("provider_chat.orchestrator.ai_client.interpret_provider_request")
     @override_settings(CHAT_MAX_RESULTS=1)
-    def test_search_results_are_bounded_and_report_more_results(self, mocked_ai):
+    def test_search_results_are_bounded_and_total_all_matches(self, mocked_ai):
         second_provider = ProviderOrganization.objects.create(
             name="Second Seattle Provider",
             org_type="nonprofit",
@@ -990,8 +1002,9 @@ class ProviderChatApiTests(APITestCase):
         response = self.post_chat({"message": "Find providers in Seattle"})
 
         self.assertEqual(response.data["count"], 2)
-        self.assertEqual(response.data["results_returned"], 1)
-        self.assertTrue(response.data["has_more"])
+        self.assertEqual(len(response.data["results"]), 1)
+        self.assertNotIn("results_returned", response.data)
+        self.assertNotIn("has_more", response.data)
 
     @patch("provider_chat.views.handle_chat_message")
     def test_safe_error_responses_do_not_expose_internal_details(self, mocked_handler):

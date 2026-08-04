@@ -34,7 +34,18 @@ SORT_EXPRESSIONS = {
 
 
 def public_provider_queryset():
-    return public_provider_card_queryset().prefetch_related(
+    """Return every public field and relationship used by the detail API."""
+    return ProviderOrganization.objects.filter(is_active=True).prefetch_related(
+        Prefetch(
+            "locations",
+            queryset=ProviderLocation.objects.order_by("-is_primary", "id"),
+        ),
+        Prefetch(
+            "services",
+            queryset=OrganizationService.objects.select_related("service").order_by(
+                "service__name", "id"
+            ),
+        ),
         Prefetch(
             "affirming_features",
             queryset=ProviderFeature.objects.select_related("feature").order_by(
@@ -46,16 +57,39 @@ def public_provider_queryset():
 
 def public_provider_card_queryset():
     """Return only the related data rendered by public provider cards."""
-    return ProviderOrganization.objects.filter(is_active=True).prefetch_related(
+    return _public_provider_list_queryset("phone")
+
+
+def public_provider_summary_queryset():
+    """Return only fields serialized by provider search and chat APIs."""
+    return _public_provider_list_queryset()
+
+
+def _public_provider_list_queryset(*extra_provider_fields):
+    provider_fields = ("id", "slug", "name", "org_type", *extra_provider_fields)
+    return ProviderOrganization.objects.filter(is_active=True).only(
+        *provider_fields
+    ).prefetch_related(
         Prefetch(
             "locations",
-            queryset=ProviderLocation.objects.order_by("-is_primary", "id"),
+            queryset=ProviderLocation.objects.only(
+                "id",
+                "organization_id",
+                "city",
+                "state_code",
+                "is_primary",
+            ).order_by("-is_primary", "id"),
         ),
         Prefetch(
-            "services",
-            queryset=OrganizationService.objects.select_related("service").order_by(
-                "service__name", "id"
-            ),
+            "services", queryset=OrganizationService.objects.select_related(
+                "service"
+            ).only(
+                "id",
+                "organization_id",
+                "service_id",
+                "service__slug",
+                "service__name",
+            ).order_by("service__name", "id"),
         ),
     )
 
@@ -103,7 +137,7 @@ def get_public_directory_catalog():
         "services": list(Service.objects.order_by("name").values("slug", "name")),
         "affirming_features": list(
             AffirmingFeature.objects.order_by("label").values(
-                "code", "label", "description"
+                "code", "label"
             )
         ),
     }
@@ -115,8 +149,8 @@ def get_public_directory_catalog():
     return catalog
 
 
-def search_providers(filters, sort="name"):
-    providers = public_provider_queryset()
+def search_providers(filters, sort="name", *, queryset=None):
+    providers = queryset if queryset is not None else public_provider_card_queryset()
 
     keyword = filters.get("keyword")
     if keyword:
