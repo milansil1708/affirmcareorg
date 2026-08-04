@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from django.core.cache import cache
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
@@ -19,6 +20,7 @@ from provider_organizations.models import (
 
 class ProviderSearchApiTests(APITestCase):
     def setUp(self):
+        cache.clear()
         self.primary_care = Service.objects.create(name="Primary Care")
         self.mental_health = Service.objects.create(name="Mental Health")
         self.informed_consent = AffirmingFeature.objects.create(
@@ -332,6 +334,12 @@ class ProviderSearchApiTests(APITestCase):
             {feature["code"] for feature in response.data["affirming_features"]},
             {self.informed_consent.code, self.harm_reduction.code},
         )
+
+        with CaptureQueriesContext(connection) as cached_queries:
+            cached_response = self.client.get(reverse("provider_search:options"))
+
+        self.assertEqual(cached_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(cached_queries), 0)
 
     def test_search_serialization_uses_a_bounded_number_of_queries(self):
         with CaptureQueriesContext(connection) as queries:

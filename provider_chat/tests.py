@@ -3,9 +3,12 @@ from io import StringIO
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+from django.conf import settings
 from django.core.management import call_command
 from django.core.cache import cache
+from django.db import connection
 from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
@@ -31,9 +34,10 @@ from .exceptions import (
     AITemporaryError,
 )
 from .models import ChatConversation, ChatTurn
+from .orchestrator import _nearby_providers
 from .prompts import build_system_instructions
 from .schemas import ChatFilters, ChatInterpretation
-from .suggestions import get_available_suggestions
+from .suggestions import SUGGESTION_DEFINITIONS, get_available_suggestions
 from .views import ProviderChatView
 
 
@@ -224,19 +228,49 @@ class ProviderChatApiTests(APITestCase):
         self.assertIn("non_field_errors", response.data)
 
     def test_starter_searches_only_include_filters_with_matches(self):
-        suggestions = get_available_suggestions()
+        with CaptureQueriesContext(connection) as initial_queries:
+            suggestions = get_available_suggestions()
         suggestion_ids = {suggestion["id"] for suggestion in suggestions}
 
         self.assertIn("accessible-clinics", suggestion_ids)
         self.assertNotIn("youth-services", suggestion_ids)
-        self.assertEqual(
-            next(
-                suggestion["count"]
-                for suggestion in suggestions
-                if suggestion["id"] == "accessible-clinics"
-            ),
-            1,
-        )
+        self.assertNotIn("count", suggestions[0])
+        self.assertLessEqual(len(initial_queries), len(SUGGESTION_DEFINITIONS))
+
+        with CaptureQueriesContext(connection) as cached_queries:
+            cached_suggestions = get_available_suggestions()
+
+        self.assertEqual(cached_suggestions, suggestions)
+        self.assertEqual(len(cached_queries), 0)
+
+    def test_nearby_search_only_loads_full_relations_for_bounded_results(self):
+        for index in range(15):
+            provider = ProviderOrganization.objects.create(
+                name=f"Nearby Provider {index:02d}",
+                org_type="clinic",
+                description="Nearby care.",
+                is_active=True,
+            )
+            ProviderLocation.objects.create(
+                organization=provider,
+                address_line1="1 Main Street",
+                city="Seattle",
+                state_code="WA",
+                zip_code="98101",
+                latitude=47.60 + index / 1000,
+                longitude=-122.33,
+            )
+
+        with CaptureQueriesContext(connection) as queries:
+            total, results = _nearby_providers(
+                {},
+                "name",
+                {"latitude": 47.6062, "longitude": -122.3321},
+            )
+
+        self.assertEqual(total, 15)
+        self.assertEqual(len(results), settings.CHAT_MAX_RESULTS)
+        self.assertLessEqual(len(queries), 6)
 
     @patch("provider_chat.views.handle_chat_message")
     def test_location_coordinates_are_passed_to_provider_search(self, mocked_handler):
@@ -985,7 +1019,8 @@ class ProviderChatApiTests(APITestCase):
         self.assertNotIn("raw refusal text", response.content.decode())
 
     def test_prompt_contains_catalog_but_no_provider_or_claim_records(self):
-        prompt = build_system_instructions(self.provider.slug)
+        with CaptureQueriesContext(connection) as initial_queries:
+            prompt = build_system_instructions(self.provider.slug)
 
         self.assertIn("Use informational", prompt)
         self.assertIn("general LGBTQ+", prompt)
@@ -1013,6 +1048,13 @@ class ProviderChatApiTests(APITestCase):
         self.assertNotIn(self.provider.name, prompt)
         self.assertNotIn("private-claim@example.com", prompt)
         self.assertNotIn("Private review note", prompt)
+
+        with CaptureQueriesContext(connection) as cached_queries:
+            cached_prompt = build_system_instructions(self.provider.slug)
+
+        self.assertEqual(cached_prompt, prompt)
+        self.assertLessEqual(len(initial_queries), 3)
+        self.assertEqual(len(cached_queries), 0)
 
 
 class OpenAIClientBoundaryTests(APITestCase):

@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.db import connection
 from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
@@ -41,6 +42,9 @@ class PublicPagePerformanceTests(TestCase):
             )
             cls.providers.append(provider)
 
+    def setUp(self):
+        cache.clear()
+
     def test_home_limits_featured_provider_query_before_prefetch(self):
         with CaptureQueriesContext(connection) as queries:
             response = self.client.get(reverse("home"))
@@ -56,6 +60,12 @@ class PublicPagePerformanceTests(TestCase):
             any("LIMIT 6" in query.upper() for query in provider_queries),
             provider_queries,
         )
+
+        with CaptureQueriesContext(connection) as cached_queries:
+            cached_response = self.client.get(reverse("home"))
+
+        self.assertEqual(cached_response.status_code, 200)
+        self.assertLessEqual(len(cached_queries), 3)
 
     def test_provider_detail_limits_similar_providers(self):
         response = self.client.get(

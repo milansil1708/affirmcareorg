@@ -3,11 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from provider_organizations.models import (
-    AffirmingFeature,
     OrganizationService,
-    ProviderLocation,
     ProviderOrganization,
-    Service,
 )
 
 from .pagination import ProviderSearchPagination
@@ -16,7 +13,11 @@ from .serializers import (
     ProviderSearchRequestSerializer,
     ProviderSummarySerializer,
 )
-from .services import public_provider_queryset, search_providers
+from .services import (
+    get_public_directory_catalog,
+    public_provider_queryset,
+    search_providers,
+)
 
 
 class ProviderSearchView(APIView):
@@ -50,13 +51,7 @@ class ProviderSearchOptionsView(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request):
-        states = list(
-            ProviderLocation.objects.filter(organization__is_active=True)
-            .exclude(state_code="")
-            .order_by("state_code")
-            .values_list("state_code", flat=True)
-            .distinct()
-        )
+        catalog = get_public_directory_catalog()
         return Response(
             {
                 "organization_types": _choice_options(
@@ -71,15 +66,9 @@ class ProviderSearchOptionsView(APIView):
                 "sort_options": _choice_options(
                     ProviderSearchRequestSerializer.SORT_CHOICES
                 ),
-                "states": states,
-                "services": list(
-                    Service.objects.order_by("name").values("slug", "name")
-                ),
-                "affirming_features": list(
-                    AffirmingFeature.objects.order_by("label").values(
-                        "code", "label", "description"
-                    )
-                ),
+                "states": catalog["states"],
+                "services": catalog["services"],
+                "affirming_features": catalog["affirming_features"],
             },
             status=status.HTTP_200_OK,
         )

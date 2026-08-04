@@ -3,7 +3,7 @@ from urllib.parse import quote_plus
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -18,6 +18,9 @@ from .forms import (
     ProviderOrganizationForm,
 )
 from .models import (
+    OrganizationService,
+    ProviderFeature,
+    ProviderLocation,
     ProviderOrganization,
     ProviderOrganizationClaim,
 )
@@ -29,6 +32,39 @@ ACCOUNT_STEPS = (
     ("services", "Services", "Care offered and delivery details"),
     ("features", "Affirming features", "Inclusive facilities and practices"),
 )
+
+
+def _provider_account_queryset():
+    return ProviderOrganization.objects.annotate(
+        account_has_location=Exists(
+            ProviderLocation.objects.filter(organization_id=OuterRef("pk"))
+        ),
+        account_has_services=Exists(
+            OrganizationService.objects.filter(organization_id=OuterRef("pk"))
+        ),
+        account_has_features=Exists(
+            ProviderFeature.objects.filter(
+                provider_id=OuterRef("pk"),
+                value="yes",
+            )
+        ),
+    )
+
+
+def _provider_account_completion(organization):
+    if organization is None:
+        return {
+            "organization": False,
+            "location": False,
+            "services": False,
+            "features": False,
+        }
+    return {
+        "organization": True,
+        "location": organization.account_has_location,
+        "services": organization.account_has_services,
+        "features": organization.account_has_features,
+    }
 
 
 def provider_detail_view(request, slug):
@@ -86,13 +122,15 @@ def provider_detail_view(request, slug):
     pending_claim = None
     claimant_has_other_organization = False
     if request.user.is_authenticated and provider.user_id is None:
-        pending_claim = request.user.provider_claim_requests.filter(
-            status=ProviderOrganizationClaim.Status.PENDING,
-        ).select_related("organization").first()
-        current_claim = provider.claim_requests.filter(
-            claimant=request.user,
-            status=ProviderOrganizationClaim.Status.PENDING,
-        ).first()
+        pending_claim = (
+            request.user.provider_claim_requests.filter(
+                status=ProviderOrganizationClaim.Status.PENDING,
+            )
+            .select_related("organization")
+            .first()
+        )
+        if pending_claim and pending_claim.organization_id == provider.id:
+            current_claim = pending_claim
         claimant_has_other_organization = (
             request.user.provider_organizations.exclude(pk=provider.pk).exists()
         )
@@ -190,7 +228,10 @@ def claim_provider_organization_view(request, slug):
 @login_required
 def provider_account_view(request):
     organization = (
-        ProviderOrganization.objects.filter(user=request.user).order_by("pk").first()
+        _provider_account_queryset()
+        .filter(user=request.user)
+        .order_by("pk")
+        .first()
     )
     primary_location = (
         organization.locations.order_by("-is_primary", "pk").first()
@@ -198,14 +239,7 @@ def provider_account_view(request):
         else None
     )
 
-    completion = {
-        "organization": organization is not None,
-        "location": primary_location is not None,
-        "services": bool(organization and organization.services.exists()),
-        "features": bool(
-            organization and organization.affirming_features.filter(value="yes").exists()
-        ),
-    }
+    completion = _provider_account_completion(organization)
     is_complete = all(completion.values())
     first_incomplete = next(
         (key for key, _, _ in ACCOUNT_STEPS if not completion[key]),
@@ -270,12 +304,8 @@ def provider_account_view(request):
                 else:
                     form.save()
 
-            updated_completion = {
-                "organization": True,
-                "location": organization.locations.exists(),
-                "services": organization.services.exists(),
-                "features": organization.affirming_features.filter(value="yes").exists(),
-            }
+            updated_organization = _provider_account_queryset().get(pk=organization.pk)
+            updated_completion = _provider_account_completion(updated_organization)
             now_complete = all(updated_completion.values())
             if now_complete and not organization.is_active:
                 organization.is_active = True

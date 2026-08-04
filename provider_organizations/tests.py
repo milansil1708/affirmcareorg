@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.db import connection
 from django.test import TestCase, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from .claims import ClaimDecisionError, approve_claim, reject_claim
@@ -261,6 +263,21 @@ class ProviderAccountViewTests(TestCase):
         self.assertContains(page, "Account settings")
         self.assertContains(page, "Save changes")
         self.assertNotContains(page, "Save and continue")
+
+    def test_completed_account_page_uses_bounded_completion_queries(self):
+        organization = self.complete_through_services()
+        ProviderFeature.objects.create(
+            provider=organization,
+            feature=self.feature,
+            value="yes",
+        )
+        self.client.force_login(self.user)
+
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(reverse("provider_account"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertLessEqual(len(queries), 6)
 
     def test_update_is_scoped_to_current_users_organization(self):
         organization = self.create_organization()

@@ -1,10 +1,19 @@
+from django.conf import settings
+from django.core.cache import cache
 from django.db.models import F, Prefetch, Q
 
 from provider_organizations.models import (
+    AffirmingFeature,
     OrganizationService,
     ProviderFeature,
     ProviderLocation,
     ProviderOrganization,
+    Service,
+)
+
+from .cache_keys import (
+    DIRECTORY_CATALOG_CACHE_KEY,
+    FEATURED_PROVIDER_IDS_CACHE_KEY,
 )
 
 
@@ -49,6 +58,61 @@ def public_provider_card_queryset():
             ),
         ),
     )
+
+
+def get_featured_providers(limit=6):
+    """Fetch a short rotating selection without sorting all providers each request."""
+    provider_ids = cache.get(FEATURED_PROVIDER_IDS_CACHE_KEY)
+    if provider_ids is None:
+        provider_ids = list(
+            ProviderOrganization.objects.filter(is_active=True)
+            .order_by("?")
+            .values_list("id", flat=True)[:limit]
+        )
+        cache.set(
+            FEATURED_PROVIDER_IDS_CACHE_KEY,
+            provider_ids,
+            settings.FEATURED_PROVIDER_CACHE_SECONDS,
+        )
+
+    providers_by_id = {
+        provider.id: provider
+        for provider in public_provider_card_queryset().filter(id__in=provider_ids)
+    }
+    return [
+        providers_by_id[provider_id]
+        for provider_id in provider_ids
+        if provider_id in providers_by_id
+    ]
+
+
+def get_public_directory_catalog():
+    """Return the small, shared filter catalog without re-querying every view."""
+    catalog = cache.get(DIRECTORY_CATALOG_CACHE_KEY)
+    if catalog is not None:
+        return catalog
+
+    catalog = {
+        "states": list(
+            ProviderLocation.objects.filter(organization__is_active=True)
+            .exclude(state_code="")
+            .order_by("state_code")
+            .values_list("state_code", flat=True)
+            .distinct()
+        ),
+        "services": list(Service.objects.order_by("name").values("slug", "name")),
+        "affirming_features": list(
+            AffirmingFeature.objects.order_by("label").values(
+                "code", "label", "description"
+            )
+        ),
+    }
+    cache.set(
+        DIRECTORY_CATALOG_CACHE_KEY,
+        catalog,
+        settings.DIRECTORY_CATALOG_CACHE_SECONDS,
+    )
+    return catalog
 
 
 def search_providers(filters, sort="name"):

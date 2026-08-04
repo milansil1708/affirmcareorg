@@ -1,4 +1,6 @@
 from django.conf import settings
+from django.db.models import FloatField, Min, Value
+from django.db.models.functions import ACos, Cast, Cos, Greatest, Least, Radians, Sin
 from rest_framework.exceptions import ValidationError
 
 from provider_search.serializers import (
@@ -103,13 +105,11 @@ def handle_chat_message(
 
     filters = _validate_search_filters(interpretation.filters.to_search_data())
     if user_location:
-        providers_with_distance = _nearby_providers(
+        total, providers_with_distance = _nearby_providers(
             filters,
             interpretation.sort,
             user_location,
         )
-        total = len(providers_with_distance)
-        providers_with_distance = providers_with_distance[: settings.CHAT_MAX_RESULTS]
         providers = [provider for provider, _distance in providers_with_distance]
     else:
         queryset = search_providers(filters, interpretation.sort)
@@ -196,41 +196,57 @@ def _validate_interpretation_state(
 
 
 def _nearby_providers(filters, sort, user_location):
-    """Return matching providers ordered by the distance to their nearest office."""
-    latitude = user_location["latitude"]
-    longitude = user_location["longitude"]
-    providers = search_providers(filters, sort).filter(
-        locations__latitude__isnull=False,
-        locations__longitude__isnull=False,
-    ).distinct()
+    """Let the database rank coordinates, then hydrate only the bounded results."""
+    latitude = float(user_location["latitude"])
+    longitude = float(user_location["longitude"])
+    request_latitude = Radians(Value(latitude, output_field=FloatField()))
+    request_longitude = Radians(Value(longitude, output_field=FloatField()))
+    location_latitude = Radians(Cast("locations__latitude", FloatField()))
+    location_longitude = Radians(Cast("locations__longitude", FloatField()))
+    cosine_angle = (
+        Sin(request_latitude) * Sin(location_latitude)
+        + Cos(request_latitude)
+        * Cos(location_latitude)
+        * Cos(location_longitude - request_longitude)
+    )
+    clamped_angle = Least(
+        Value(1.0),
+        Greatest(Value(-1.0), cosine_angle),
+    )
+    distance_miles = Value(3958.7613) * ACos(clamped_angle)
 
-    nearby = []
-    for provider in providers:
-        distances = [
-            _distance_miles(latitude, longitude, location.latitude, location.longitude)
-            for location in provider.locations.all()
-            if location.latitude is not None and location.longitude is not None
+    ranked_providers = (
+        search_providers(filters, sort)
+        .prefetch_related(None)
+        .order_by()
+        .filter(
+            locations__latitude__isnull=False,
+            locations__longitude__isnull=False,
+        )
+        .annotate(
+            distance_miles=Min(
+                distance_miles,
+                output_field=FloatField(),
+            )
+        )
+        .order_by("distance_miles", "name", "id")
+    )
+    total = ranked_providers.count()
+    selected = list(
+        ranked_providers.values_list("id", "distance_miles")[
+            : settings.CHAT_MAX_RESULTS
         ]
-        if distances:
-            nearby.append((provider, min(distances)))
-    return sorted(nearby, key=lambda item: (item[1], item[0].name.lower(), item[0].id))
-
-
-def _distance_miles(latitude_a, longitude_a, latitude_b, longitude_b):
-    """Calculate straight-line distance using the haversine formula."""
-    from math import asin, cos, radians, sin, sqrt
-
-    latitude_a, longitude_a, latitude_b, longitude_b = map(
-        radians,
-        (latitude_a, longitude_a, float(latitude_b), float(longitude_b)),
     )
-    latitude_delta = latitude_b - latitude_a
-    longitude_delta = longitude_b - longitude_a
-    haversine = (
-        sin(latitude_delta / 2) ** 2
-        + cos(latitude_a) * cos(latitude_b) * sin(longitude_delta / 2) ** 2
-    )
-    return 3958.7613 * 2 * asin(sqrt(haversine))
+    selected_ids = [provider_id for provider_id, _distance in selected]
+    loaded_providers = {
+        provider.id: provider
+        for provider in public_provider_queryset().filter(id__in=selected_ids)
+    }
+    return total, [
+        (loaded_providers[provider_id], distance)
+        for provider_id, distance in selected
+        if provider_id in loaded_providers
+    ]
 
 
 def _validate_search_filters(filters):

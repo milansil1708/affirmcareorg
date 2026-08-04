@@ -1,12 +1,10 @@
 import json
 
 from provider_organizations.models import (
-    AffirmingFeature,
     OrganizationService,
-    ProviderLocation,
     ProviderOrganization,
-    Service,
 )
+from provider_search.services import get_public_directory_catalog
 
 
 BASE_INSTRUCTIONS = """
@@ -114,6 +112,7 @@ def build_system_instructions(
     conversation_context=None,
     has_user_location=False,
 ):
+    directory_catalog = get_public_directory_catalog()
     catalog = {
         "organization_types": _choice_values(
             ProviderOrganization.ORG_TYPE_CHOICES
@@ -122,22 +121,12 @@ def build_system_instructions(
             OrganizationService.DELIVERY_MODE_CHOICES
         ),
         "age_groups": _choice_values(OrganizationService.AGE_GROUP_CHOICES),
-        "services": list(
-            Service.objects.order_by("name").values("slug", "name")
-        ),
-        "affirming_features": list(
-            AffirmingFeature.objects.order_by("label").values("code", "label")
-        ),
-        "known_state_codes": sorted(
-            {
-                state.upper()
-                for state in ProviderLocation.objects.filter(
-                    organization__is_active=True
-                )
-                .exclude(state_code="")
-                .values_list("state_code", flat=True)
-            }
-        ),
+        "services": directory_catalog["services"],
+        "affirming_features": [
+            {"code": feature["code"], "label": feature["label"]}
+            for feature in directory_catalog["affirming_features"]
+        ],
+        "known_state_codes": directory_catalog["states"],
         "application_provider_slug": application_provider_slug,
         "current_location_available": has_user_location,
         "conversation": conversation_context or {

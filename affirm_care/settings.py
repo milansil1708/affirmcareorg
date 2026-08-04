@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'pages',
     'blogs',
     'provider_organizations',
-    'provider_search',
+    'provider_search.apps.ProviderSearchConfig',
     'provider_chat',
     'rest_framework',
     'tinymce',
@@ -173,6 +173,18 @@ CHAT_MEMORY_MAX_TURNS = env.int("CHAT_MEMORY_MAX_TURNS", default=6)
 CHAT_CONVERSATION_TTL_MINUTES = env.int(
     "CHAT_CONVERSATION_TTL_MINUTES",
     default=1440,
+)
+DIRECTORY_CATALOG_CACHE_SECONDS = env.int(
+    "DIRECTORY_CATALOG_CACHE_SECONDS",
+    default=900,
+)
+FEATURED_PROVIDER_CACHE_SECONDS = env.int(
+    "FEATURED_PROVIDER_CACHE_SECONDS",
+    default=300,
+)
+CHAT_SUGGESTIONS_CACHE_SECONDS = env.int(
+    "CHAT_SUGGESTIONS_CACHE_SECONDS",
+    default=900,
 )
 
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])

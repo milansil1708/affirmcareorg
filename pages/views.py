@@ -3,10 +3,10 @@ from django.http import HttpResponse
 from django.urls import reverse
 from django.views.generic import TemplateView
 
-from provider_organizations.models import AffirmingFeature, ProviderLocation, Service
 from provider_search.services import (
     SORT_EXPRESSIONS,
-    public_provider_card_queryset,
+    get_featured_providers,
+    get_public_directory_catalog,
     search_providers,
 )
 
@@ -130,26 +130,18 @@ class HomeView(TemplateView):
                 "provider_count": 0,
                 "pagination_query": "",
             }
-            featured_providers = list(
-                public_provider_card_queryset().order_by("?")[:6]
-            )
+            featured_providers = get_featured_providers()
 
-        states = (
-            ProviderLocation.objects.exclude(state_code__isnull=True)
-            .exclude(state_code__exact="")
-            .order_by("state_code")
-            .values_list("state_code", flat=True)
-            .distinct()
-        )
+        catalog = get_public_directory_catalog()
 
         context.update(search_state)
         context.update(result_context)
         context.update(
             {
                 "featured_providers": featured_providers,
-                "services": Service.objects.order_by("name"),
-                "affirming_features": AffirmingFeature.objects.order_by("label"),
-                "states": states,
+                "services": catalog["services"],
+                "affirming_features": catalog["affirming_features"],
+                "states": catalog["states"],
                 "show_results_heading": True,
                 "canonical_url": self.request.build_absolute_uri(reverse("home")),
             }

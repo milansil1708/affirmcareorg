@@ -1,5 +1,9 @@
 """Directory-backed starter searches for the provider chat."""
 
+from django.conf import settings
+from django.core.cache import cache
+
+from provider_search.cache_keys import CHAT_SUGGESTIONS_CACHE_KEY
 from provider_search.services import search_providers
 
 
@@ -75,15 +79,22 @@ SUGGESTION_DEFINITIONS = (
 
 def get_available_suggestions():
     """Return only starter searches that currently produce public results."""
+    cached_suggestions = cache.get(CHAT_SUGGESTIONS_CACHE_KEY)
+    if cached_suggestions is not None:
+        return cached_suggestions
+
     available = []
     for definition in SUGGESTION_DEFINITIONS:
-        count = search_providers(definition["filters"]).count()
-        if count:
+        if search_providers(definition["filters"]).exists():
             available.append(
                 {
                     **definition,
                     "filters": definition["filters"].copy(),
-                    "count": count,
                 }
             )
+    cache.set(
+        CHAT_SUGGESTIONS_CACHE_KEY,
+        available,
+        settings.CHAT_SUGGESTIONS_CACHE_SECONDS,
+    )
     return available
