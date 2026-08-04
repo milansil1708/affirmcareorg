@@ -4,6 +4,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.views.generic import TemplateView
+from django.urls import reverse
 
 from .exceptions import (
     AIConfigurationError,
@@ -128,6 +129,9 @@ class ProviderChatPageView(TemplateView):
             settings.CHAT_CONVERSATION_TTL_MINUTES * 60 * 1000
         )
         context["chat_suggestions"] = get_available_suggestions()
+        context["canonical_url"] = self.request.build_absolute_uri(
+            reverse("provider_chat_pages:chat")
+        )
         return context
 
 

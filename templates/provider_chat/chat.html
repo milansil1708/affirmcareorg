@@ -7,10 +7,12 @@
 {% block og_description %}Search public provider listings using everyday language.{% endblock %}
 {% block twitter_title %}Affirm Care Provider Assistant{% endblock %}
 {% block twitter_description %}Find LGBTQ+ and TGI-affirming providers conversationally.{% endblock %}
+{% block robots_meta %}noindex,nofollow{% endblock %}
+{% block extra_meta %}<link rel="canonical" href="{{ canonical_url }}">{% endblock %}
 {% block body_class %}provider-chat-layout{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'provider_chat/css/chat.css' %}?v=20260721.2">
+<link rel="stylesheet" href="{% static 'provider_chat/css/chat.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -133,5 +135,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'provider_chat/js/chat.js' %}?v=20260721.8"></script>
+<script src="{% static 'provider_chat/js/chat.js' %}"></script>
 {% endblock %}

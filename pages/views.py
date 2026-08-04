@@ -1,10 +1,14 @@
-import random
-
 from django.core.paginator import Paginator
+from django.http import HttpResponse
+from django.urls import reverse
 from django.views.generic import TemplateView
 
 from provider_organizations.models import AffirmingFeature, ProviderLocation, Service
-from provider_search.services import SORT_EXPRESSIONS, public_provider_queryset, search_providers
+from provider_search.services import (
+    SORT_EXPRESSIONS,
+    public_provider_card_queryset,
+    search_providers,
+)
 
 
 PROVIDER_RESULTS_PAGE_SIZE = 12
@@ -126,9 +130,9 @@ class HomeView(TemplateView):
                 "provider_count": 0,
                 "pagination_query": "",
             }
-            featured_providers = list(public_provider_queryset().distinct())
-            random.shuffle(featured_providers)
-            featured_providers = featured_providers[:6]
+            featured_providers = list(
+                public_provider_card_queryset().order_by("?")[:6]
+            )
 
         states = (
             ProviderLocation.objects.exclude(state_code__isnull=True)
@@ -147,6 +151,7 @@ class HomeView(TemplateView):
                 "affirming_features": AffirmingFeature.objects.order_by("label"),
                 "states": states,
                 "show_results_heading": True,
+                "canonical_url": self.request.build_absolute_uri(reverse("home")),
             }
         )
         return context
@@ -165,7 +170,32 @@ class ProviderResultsView(TemplateView):
         context.update(search_state)
         context.update(paginated_provider_context(self.request, providers))
         context["show_results_heading"] = False
+        context["canonical_url"] = self.request.build_absolute_uri(
+            reverse("provider_results")
+        )
         return context
 
 
 about_view = TemplateView.as_view(template_name="pages/about.html")
+
+
+def robots_txt(request):
+    sitemap_url = request.build_absolute_uri(reverse("sitemap"))
+    body = "\n".join(
+        (
+            "User-agent: SemrushBot",
+            "Disallow: /",
+            "",
+            "User-agent: PetalBot",
+            "Disallow: /",
+            "",
+            "User-agent: *",
+            "Disallow: /admin/",
+            "Disallow: /api/chat/",
+            "Disallow: /chat/",
+            "Disallow: /users/",
+            f"Sitemap: {sitemap_url}",
+            "",
+        )
+    )
+    return HttpResponse(body, content_type="text/plain; charset=utf-8")

@@ -8,17 +8,19 @@
 
   <title>{% block page_title %}Affirm Care{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}Find and compare gender-affirming healthcare providers by state and services.{% endblock %}">
-  <meta name="robots" content="index,follow">
+  <meta name="robots" content="{% block robots_meta %}index,follow{% endblock %}">
   <meta property="og:type" content="website">
   <meta property="og:title" content="{% block og_title %}Affirm Care | Gender-Affirming Provider Search{% endblock %}">
   <meta property="og:description" content="{% block og_description %}Search trusted gender-affirming providers, services, and locations.{% endblock %}">
-  <meta property="og:image" content="{% static 'pages/images/logo.png' %}">
+  <meta property="og:image" content="{% static 'pages/images/slider/1.jpg' %}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{% block twitter_title %}Affirm Care | Gender-Affirming Provider Search{% endblock %}">
   <meta name="twitter:description" content="{% block twitter_description %}Find LGBTQ+ and TGI-affirming care with clarity and confidence.{% endblock %}">
   {% block extra_meta %}{% endblock %}
 
-  <link href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700|Raleway:300,400,500,600,700|Crete+Round:400i" rel="stylesheet" type="text/css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700|Raleway:300,400,500,600,700|Crete+Round:400i&display=swap" rel="stylesheet" type="text/css" />
   <link rel="stylesheet" href="{% static 'pages/css/bootstrap.css' %}">
   <link rel="stylesheet" href="{% static 'pages/css/swiper.css' %}">
   <link rel="stylesheet" href="{% static 'pages/css/style.css' %}">
@@ -28,7 +30,7 @@
   <link rel="stylesheet" href="{% static 'pages/css/magnific-popup.css' %}" />
   <link rel="stylesheet" href="{% static 'pages/css/responsive.css' %}" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="{% static 'provider_chat/css/launcher.css' %}?v=20260720.3">
+  <link rel="stylesheet" href="{% static 'provider_chat/css/launcher.css' %}">
   <style>
     #header.full-header #logo {
       border-right: none;
@@ -326,7 +328,7 @@
   <script src="{% static 'pages/js/jquery.js' %}"></script>
   <script src="{% static 'pages/js/plugins.js' %}"></script>
   <script src="{% static 'pages/js/functions.js' %}"></script>
-  <script src="{% static 'provider_chat/js/launcher.js' %}?v=20260720.2"></script>
+  <script src="{% static 'provider_chat/js/launcher.js' %}"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

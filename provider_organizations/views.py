@@ -1,13 +1,14 @@
-import random
 from urllib.parse import quote_plus
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
-from django.db.models import Prefetch
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
+
+from provider_search.services import public_provider_card_queryset
 
 from .claims import notify_admin_of_claim
 from .forms import (
@@ -17,7 +18,6 @@ from .forms import (
     ProviderOrganizationForm,
 )
 from .models import (
-    ProviderLocation,
     ProviderOrganization,
     ProviderOrganizationClaim,
 )
@@ -33,17 +33,13 @@ ACCOUNT_STEPS = (
 
 def provider_detail_view(request, slug):
     provider = get_object_or_404(
-        ProviderOrganization.objects.filter(is_active=True).prefetch_related(
-            Prefetch(
-                "locations",
-                queryset=ProviderLocation.objects.order_by("-is_primary", "id"),
-            ),
-            Prefetch("services__service"),
-        ),
+        public_provider_card_queryset(),
         slug=slug,
     )
 
-    primary_location = provider.locations.first()
+    provider_services = list(provider.services.all())
+    provider_locations = list(provider.locations.all())
+    primary_location = provider_locations[0] if provider_locations else None
     if primary_location:
         if primary_location.latitude and primary_location.longitude:
             map_query = f"{primary_location.latitude},{primary_location.longitude}"
@@ -65,29 +61,27 @@ def provider_detail_view(request, slug):
     else:
         map_embed_url = None
 
-    provider_service_ids = list(provider.services.values_list("service_id", flat=True))
+    provider_service_ids = {service.service_id for service in provider_services}
     similar_queryset = (
-        ProviderOrganization.objects.filter(
-            is_active=True,
+        public_provider_card_queryset()
+        .filter(
             services__service_id__in=provider_service_ids,
         )
         .exclude(id=provider.id)
-        .prefetch_related(
-            Prefetch(
-                "locations",
-                queryset=ProviderLocation.objects.order_by("-is_primary", "id"),
-            ),
-            Prefetch("services__service"),
+        .annotate(
+            shared_service_count=Count(
+                "services__service_id",
+                distinct=True,
+            )
         )
-        .distinct()
+        .order_by("-shared_service_count", "name", "id")[:12]
     )
     similar_providers = list(similar_queryset)
-    random.shuffle(similar_providers)
-    similar_providers = similar_providers[:12]
 
-    offers_telehealth = provider.services.filter(
-        delivery_mode__in=["telehealth", "both"]
-    ).exists()
+    offers_telehealth = any(
+        service.delivery_mode in {"telehealth", "both"}
+        for service in provider_services
+    )
     current_claim = None
     pending_claim = None
     claimant_has_other_organization = False
@@ -112,6 +106,9 @@ def provider_detail_view(request, slug):
         "current_claim": current_claim,
         "pending_claim": pending_claim,
         "claimant_has_other_organization": claimant_has_other_organization,
+        "canonical_url": request.build_absolute_uri(
+            reverse("provider_detail", args=(provider.slug,))
+        ),
     }
     return render(request, "pages/provider_detail.html", context)
 

@@ -9,7 +9,7 @@
 {% block twitter_description %}Provider profile for {{ provider.name }} on Affirm Care.{% endblock %}
 
 {% block extra_meta %}
-<link rel="canonical" href="{{ request.build_absolute_uri }}">
+<link rel="canonical" href="{{ canonical_url }}">
 {% endblock %}
 
 {% block extra_css %}
@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <link rel="stylesheet" href="{% static 'pages/css/home.css' %}">
-<link rel="stylesheet" href="{% static 'pages/css/provider_detail.css' %}?v=2">
+<link rel="stylesheet" href="{% static 'pages/css/provider_detail.css' %}">
 {% endblock %}
 
 {% block content %}

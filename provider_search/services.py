@@ -25,6 +25,18 @@ SORT_EXPRESSIONS = {
 
 
 def public_provider_queryset():
+    return public_provider_card_queryset().prefetch_related(
+        Prefetch(
+            "affirming_features",
+            queryset=ProviderFeature.objects.select_related("feature").order_by(
+                "feature__label", "id"
+            ),
+        ),
+    )
+
+
+def public_provider_card_queryset():
+    """Return only the related data rendered by public provider cards."""
     return ProviderOrganization.objects.filter(is_active=True).prefetch_related(
         Prefetch(
             "locations",
@@ -34,12 +46,6 @@ def public_provider_queryset():
             "services",
             queryset=OrganizationService.objects.select_related("service").order_by(
                 "service__name", "id"
-            ),
-        ),
-        Prefetch(
-            "affirming_features",
-            queryset=ProviderFeature.objects.select_related("feature").order_by(
-                "feature__label", "id"
             ),
         ),
     )

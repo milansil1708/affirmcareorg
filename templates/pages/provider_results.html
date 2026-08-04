@@ -7,10 +7,12 @@
 {% block og_description %}Browse affirming providers matching your selected search filters.{% endblock %}
 {% block twitter_title %}Affirm Care Provider Results{% endblock %}
 {% block twitter_description %}Browse affirming providers matching your selected search filters.{% endblock %}
+{% block robots_meta %}noindex,follow{% endblock %}
+{% block extra_meta %}<link rel="canonical" href="{{ canonical_url }}">{% endblock %}
 {% block body_class %}provider-results-layout{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'pages/css/provider_results.css' %}?v=20260720.2">
+<link rel="stylesheet" href="{% static 'pages/css/provider_results.css' %}">
 {% endblock %}
 
 {% block content %}

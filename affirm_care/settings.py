@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.sitemaps',
     'django.contrib.staticfiles',
     'users',
     'pages',
@@ -69,6 +71,7 @@ REST_FRAMEWORK = {
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "affirm_care.middleware.RequestTimingMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -156,8 +159,8 @@ CLAIM_ADMIN_EMAIL = env(
 
 OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
 OPENAI_MODEL = env("OPENAI_MODEL", default="gpt-5.6-luna")
-OPENAI_TIMEOUT_SECONDS = env.float("OPENAI_TIMEOUT_SECONDS", default=15.0)
-OPENAI_MAX_RETRIES = env.int("OPENAI_MAX_RETRIES", default=2)
+OPENAI_TIMEOUT_SECONDS = env.float("OPENAI_TIMEOUT_SECONDS", default=10.0)
+OPENAI_MAX_RETRIES = env.int("OPENAI_MAX_RETRIES", default=0)
 OPENAI_MAX_OUTPUT_TOKENS = env.int("OPENAI_MAX_OUTPUT_TOKENS", default=600)
 CHAT_MAX_RESULTS = env.int("CHAT_MAX_RESULTS", default=10)
 CHAT_MAX_MESSAGE_LENGTH = env.int("CHAT_MAX_MESSAGE_LENGTH", default=2000)
@@ -220,9 +223,9 @@ STORAGES = {
     },
     "staticfiles": {
         "BACKEND": (
-            "django.contrib.staticfiles.storage.StaticFilesStorage"
-            if DEBUG
-            else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            if not DEBUG or "collectstatic" in sys.argv
+            else "django.contrib.staticfiles.storage.StaticFilesStorage"
         ),
     },
 }
