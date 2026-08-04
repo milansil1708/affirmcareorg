@@ -70,6 +70,7 @@ REST_FRAMEWORK = {
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "affirm_care.middleware.BlockAbusiveCrawlersMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "affirm_care.middleware.RequestTimingMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -216,6 +217,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+
+BLOCKED_CRAWLER_USER_AGENTS = env.list(
+    "BLOCKED_CRAWLER_USER_AGENTS",
+    default=["SemrushBot", "PetalBot", "Bytespider"],
+)
 
 STORAGES = {
     "default": {

@@ -72,6 +72,16 @@ class PublicPagePerformanceTests(TestCase):
 
 
 class CrawlerControlTests(TestCase):
+    def test_abusive_crawler_is_rejected_before_database_access(self):
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(
+                reverse("home"),
+                HTTP_USER_AGENT="Mozilla/5.0 compatible; PetalBot",
+            )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(len(queries), 0)
+
     def test_robots_blocks_expensive_and_private_routes(self):
         response = self.client.get(reverse("robots_txt"))
 
