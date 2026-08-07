@@ -1,334 +1,313 @@
 {% load static %}
-<!DOCTYPE html>
-<html dir="ltr" lang="en-US">
-<head>
-  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-  <meta name="author" content="Affirm Care" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <title>{% block page_title %}Affirm Care{% endblock %}</title>
-  <meta name="description" content="{% block meta_description %}Find and compare gender-affirming healthcare providers by state and services.{% endblock %}">
-  <meta name="robots" content="{% block robots_meta %}index,follow{% endblock %}">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="{% block og_title %}Affirm Care | Gender-Affirming Provider Search{% endblock %}">
-  <meta property="og:description" content="{% block og_description %}Search trusted gender-affirming providers, services, and locations.{% endblock %}">
-  <meta property="og:image" content="{% static 'pages/images/slider/1.jpg' %}">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="{% block twitter_title %}Affirm Care | Gender-Affirming Provider Search{% endblock %}">
-  <meta name="twitter:description" content="{% block twitter_description %}Find LGBTQ+ and TGI-affirming care with clarity and confidence.{% endblock %}">
-  {% block extra_meta %}{% endblock %}
+<style>
+#logo a.affirmcare-logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "Raleway", sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: none;
+  line-height: 1;
+  padding: 28px 0;
+  font-size: 30px;
+}
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700|Raleway:300,400,500,600,700|Crete+Round:400i&display=swap" rel="stylesheet" type="text/css" />
-  <link rel="stylesheet" href="{% static 'pages/css/bootstrap.css' %}">
-  <link rel="stylesheet" href="{% static 'pages/css/swiper.css' %}">
-  <link rel="stylesheet" href="{% static 'pages/css/style.css' %}">
-  <link rel="stylesheet" href="{% static 'pages/css/dark.css' %}" />
-  <link rel="stylesheet" href="{% static 'pages/css/font-icons.css' %}" />
-  <link rel="stylesheet" href="{% static 'pages/css/animate.css' %}" />
-  <link rel="stylesheet" href="{% static 'pages/css/magnific-popup.css' %}" />
-  <link rel="stylesheet" href="{% static 'pages/css/responsive.css' %}" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="{% static 'provider_chat/css/launcher.css' %}">
-  <style>
-    #header.full-header #logo {
-      border-right: none;
-      padding-right: 0;
-      margin-right: 24px;
-    }
+#logo a.standard-logo.affirmcare-logo {
+  display: flex;
+}
 
-    #logo a.affirmcare-logo {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-family: "Raleway", sans-serif;
-      font-weight: 800;
-      letter-spacing: 0.4px;
-      text-transform: none;
-      line-height: 1;
-      padding: 28px 0;
-      font-size: 30px;
-    }
+#logo a.retina-logo.affirmcare-logo {
+  display: none;
+}
 
-    #logo a.standard-logo.affirmcare-logo {
-      display: flex;
-    }
+#logo .affirmcare-logo-main {
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+}
 
-    #logo a.retina-logo.affirmcare-logo {
-      display: none;
-    }
+#logo .affirmcare-logo-accent {
+  color: #2cb9a4;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+}
 
-    #logo .affirmcare-logo-main {
-      color: #ffffff;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
-    }
+.sticky-header #logo .affirmcare-logo-main {
+  color: #0a2f2a;
+  text-shadow: none;
+}
 
-    #logo .affirmcare-logo-accent {
-      color: #2cb9a4;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
-    }
+.sticky-header #logo .affirmcare-logo-accent {
+  color: #0a7a6f;
+  text-shadow: none;
+}
 
-    .sticky-header #logo .affirmcare-logo-main {
-      color: #0a2f2a;
-      text-shadow: none;
-    }
+#primary-menu .logout-menu-form {
+  margin: 0;
+}
 
-    .sticky-header #logo .affirmcare-logo-accent {
-      color: #0a7a6f;
-      text-shadow: none;
-    }
+#primary-menu .logout-menu-button {
+  height: 100px;
+  padding: 39px 15px;
+  border: 0;
+  background: transparent;
+  color: #444;
+  font-family: "Raleway", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  line-height: 22px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
 
-    #primary-menu .logout-menu-form {
-      margin: 0;
-    }
+#header.dark:not(.sticky-header) #primary-menu .logout-menu-button {
+  color: #fff;
+}
 
-    #primary-menu .logout-menu-button {
-      height: 100px;
-      padding: 39px 15px;
-      border: 0;
-      background: transparent;
-      color: #444;
-      font-family: "Raleway", sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 1px;
-      line-height: 22px;
-      text-transform: uppercase;
-      cursor: pointer;
-    }
+#primary-menu .logout-menu-button:hover,
+#primary-menu .logout-menu-button:focus {
+  color: #dc3545;
+  outline: 0;
+}
 
-    #header.dark:not(.sticky-header) #primary-menu .logout-menu-button {
-      color: #fff;
-    }
+.sticky-header #primary-menu .logout-menu-button {
+  height: 60px;
+  padding-top: 19px;
+  padding-bottom: 19px;
+  color: #444;
+}
 
-    #primary-menu .logout-menu-button:hover,
-    #primary-menu .logout-menu-button:focus {
-      color: #dc3545;
-      outline: 0;
-    }
+.sticky-header #primary-menu .logout-menu-button:hover,
+.sticky-header #primary-menu .logout-menu-button:focus {
+  color: #dc3545;
+}
 
-    .sticky-header #primary-menu .logout-menu-button {
-      height: 60px;
-      padding-top: 19px;
-      padding-bottom: 19px;
-      color: #444;
-    }
+@media (max-width: 991.98px) {
+  #primary-menu-trigger {
+    top: 18px;
+    right: 75px;
+    left: auto;
+    margin-top: 0;
+  }
 
-    .sticky-header #primary-menu .logout-menu-button:hover,
-    .sticky-header #primary-menu .logout-menu-button:focus {
-      color: #dc3545;
-    }
+  #top-search > a {
+    display: flex;
+    top: 18px;
+    right: 25px;
+    width: 50px;
+    height: 50px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    color: #555;
+  }
 
-    @media (max-width: 991.98px) {
-      #primary-menu-trigger {
-        top: 18px;
-        right: 75px;
-        left: auto;
-        margin-top: 0;
-      }
+  #top-search > a img {
+    display: none;
+  }
 
-      #top-search > a {
-        display: flex;
-        top: 18px;
-        right: 25px;
-        width: 50px;
-        height: 50px;
-        align-items: center;
-        justify-content: center;
-        margin: 0;
-        color: #555;
-      }
+  #top-search > a::before {
+    display: block;
+    width: 15px;
+    height: 15px;
+    background-color: currentColor;
+    content: "";
+    -webkit-mask: url("{% static 'pages/images/icons/search.svg' %}") center / contain no-repeat;
+    mask: url("{% static 'pages/images/icons/search.svg' %}") center / contain no-repeat;
+  }
 
-      #top-search > a img {
-        display: none;
-      }
+  body.provider-chat-layout #primary-menu-trigger,
+  body.provider-chat-layout #top-search > a,
+  .responsive-sticky-header:not(.static-sticky) #primary-menu-trigger,
+  .responsive-sticky-header:not(.static-sticky) #top-search > a {
+    top: 5px;
+  }
+}
 
-      #top-search > a::before {
-        display: block;
-        width: 15px;
-        height: 15px;
-        background-color: currentColor;
-        content: "";
-        -webkit-mask: url("{% static 'pages/images/icons/search.svg' %}") center / contain no-repeat;
-        mask: url("{% static 'pages/images/icons/search.svg' %}") center / contain no-repeat;
-      }
+@media (max-width: 767px) {
+  #logo a.affirmcare-logo {
+    font-size: 24px;
+    padding: 24px 0;
+  }
 
-      body.provider-chat-layout #primary-menu-trigger,
-      body.provider-chat-layout #top-search > a,
-      .responsive-sticky-header:not(.static-sticky) #primary-menu-trigger,
-      .responsive-sticky-header:not(.static-sticky) #top-search > a {
-        top: 5px;
-      }
-    }
+  #primary-menu-trigger,
+  #top-search > a {
+    top: 11px;
+  }
 
-    @media (max-width: 767px) {
-      #logo a.affirmcare-logo {
-        font-size: 24px;
-        padding: 24px 0;
-      }
+  body.provider-chat-layout #primary-menu-trigger,
+  body.provider-chat-layout #top-search > a,
+  .responsive-sticky-header:not(.static-sticky) #primary-menu-trigger,
+  .responsive-sticky-header:not(.static-sticky) #top-search > a {
+    top: 5px;
+  }
 
-      #primary-menu-trigger,
-      #top-search > a {
-        top: 11px;
-      }
+  #primary-menu .logout-menu-button {
+    width: 100%;
+    height: auto;
+    padding: 14px 5px;
+    color: #444;
+    text-align: left;
+  }
+}
 
-      body.provider-chat-layout #primary-menu-trigger,
-      body.provider-chat-layout #top-search > a,
-      .responsive-sticky-header:not(.static-sticky) #primary-menu-trigger,
-      .responsive-sticky-header:not(.static-sticky) #top-search > a {
-        top: 5px;
-      }
+@media only screen and (-webkit-min-device-pixel-ratio: 2),
+  only screen and (min-resolution: 192dpi),
+  only screen and (min-resolution: 2dppx) {
+  #logo a.standard-logo.affirmcare-logo {
+    display: none;
+  }
 
-      #primary-menu .logout-menu-button {
-        width: 100%;
-        height: auto;
-        padding: 14px 5px;
-        color: #444;
-        text-align: left;
-      }
-    }
+  #logo a.retina-logo.affirmcare-logo {
+    display: flex;
+  }
+}
+</style>
 
-    @media only screen and (-webkit-min-device-pixel-ratio: 2),
-      only screen and (min-resolution: 192dpi),
-      only screen and (min-resolution: 2dppx) {
-      #logo a.standard-logo.affirmcare-logo {
-        display: none;
-      }
+<div id="header-wrap">
 
-      #logo a.retina-logo.affirmcare-logo {
-        display: flex;
-      }
-    }
-  </style>
-  {% block extra_css %}{% endblock %}
-</head>
-<body class="stretched {% block body_class %}{% endblock %}">
-  <div id="wrapper" class="clearfix">
-   <header id="header" class="transparent-header full-header {% block header_class %}{% endblock %}" data-sticky-class="not-dark">
+  <div class="container clearfix">
 
-			<div id="header-wrap">
+    <div id="primary-menu-trigger"><i class="icon-reorder"></i></div>
 
-				<div class="container clearfix">
+    <!-- Logo
+    ============================================= -->
+    <div id="logo">
+      <a href="{% url 'home' %}" class="standard-logo affirmcare-logo" aria-label="Affirm Care home">
+        <span class="affirmcare-logo-main">Affirm</span>
+        <span class="affirmcare-logo-accent">Care</span>
+      </a>
 
-					<div id="primary-menu-trigger"><i class="icon-reorder"></i></div>
+      <a href="{% url 'home' %}" class="retina-logo affirmcare-logo" aria-label="Affirm Care home">
+        <span class="affirmcare-logo-main">Affirm</span>
+        <span class="affirmcare-logo-accent">Care</span>
+      </a>
+    </div><!-- #logo end -->
 
-					<!-- Logo
-					============================================= -->
-					<div id="logo">
-                        <a href="{% url 'home' %}" class="standard-logo affirmcare-logo" aria-label="Affirm Care home">
-                            <span class="affirmcare-logo-main">Affirm</span>
-                            <span class="affirmcare-logo-accent">Care</span>
-                        </a>
-                        <a href="{% url 'home' %}" class="retina-logo affirmcare-logo" aria-label="Affirm Care home">
-                            <span class="affirmcare-logo-main">Affirm</span>
-                            <span class="affirmcare-logo-accent">Care</span>
-                        </a>
-                    </div><!-- #logo end -->
+    <!-- Primary Navigation
+    ============================================= -->
+    <nav id="primary-menu" class="dark">
 
-					<!-- Primary Navigation
-					============================================= -->
-					<nav id="primary-menu" class="dark">
+      <ul>
 
-						<ul>
-							<li class="current"><a href="{% url 'home' %}"><div>Home</div></a>
-							</li>
-              {% comment %}
-							<li><a href="{% url 'blogs' %}"><div>Blogs</div></a>
-							</li>
-              {% endcomment %}
-              {% if request.user.is_authenticated %}
-                <li>
-                  <a href="{% url 'provider_account' %}"><div>Organization</div></a>
-                </li>
-                <li class="logout-menu-item">
-                  <form method="post" action="{% url 'users:logout' %}" class="logout-menu-form">
-                    {% csrf_token %}
-                    <button type="submit" class="logout-menu-button">Logout</button>
-                  </form>
-                </li>
-              {% else %}
-                <li>
-                  <a href="{% url 'users:login' %}">
-                    <div>Provider Login</div>
-                  </a>
-                </li>
-              {% endif %}
-						</ul>
+        <li class="current">
+          <a href="{% url 'home' %}"><div>Home</div></a>
+        </li>
 
-						<!-- Top Search
-						============================================= -->
-						<div id="top-search">
-							<a href="{% url 'home' %}#provider-search" aria-label="Go to provider search"><img
-                  src="{% static 'pages/images/icons/search.svg' %}"
-                  alt="Send"
-              ></a>
-							<form action="{% url 'home' %}#provider-search" method="get">
-								<input type="text" name="keyword" class="form-control" value="" placeholder="Search providers...">
-							</form>
-						</div><!-- #top-search end -->
+        <li>
+          <a href="/news/"><div>News</div></a>
+        </li>
 
-					</nav><!-- #primary-menu end -->
+        {% comment %}
+        <li>
+          <a href="{% url 'blogs' %}"><div>Blogs</div></a>
+        </li>
+        {% endcomment %}
 
-				</div>
+        {% if request.user.is_authenticated %}
 
-			</div>
+        <li>
+          <a href="{% url 'provider_account' %}">
+            <div>Organization</div>
+          </a>
+        </li>
 
-		</header><!-- #header end -->
+        <li class="logout-menu-item">
+          <form method="post" action="{% url 'users:logout' %}" class="logout-menu-form">
+            {% csrf_token %}
+            <button type="submit" class="logout-menu-button">Logout</button>
+          </form>
+        </li>
 
+        {% else %}
 
-    {% block content %}{% endblock %}
+        <li>
+          <a href="{% url 'users:login' %}">
+            <div>Provider Login</div>
+          </a>
+        </li>
 
-    <footer id="footer" class="dark">
-      <div id="copyrights">
-        <div class="container clearfix">
-          <div class="col_half">
-            Copyrights &copy; {% now "Y" %} Affirm Care.
-          </div>
-          <div class="col_half col_last tright">
-            <i class="icon-envelope2"></i> hello@affirmcare.org
-          </div>
-        </div>
-      </div>
-    </footer>
+        {% endif %}
+
+      </ul>
+
+      <!-- Top Search
+      ============================================= -->
+      <div id="top-search">
+
+        <a href="{% url 'home' %}#provider-search" aria-label="Go to provider search">
+          <img
+            src="{% static 'pages/images/icons/search.svg' %}"
+            alt="Send"
+          >
+        </a>
+
+        <form action="{% url 'home' %}#provider-search" method="get">
+          <input
+            type="text"
+            name="keyword"
+            class="form-control"
+            value=""
+            placeholder="Search providers..."
+          >
+        </form>
+
+      </div><!-- #top-search end -->
+
+    </nav><!-- #primary-menu end -->
+
   </div>
 
-  <div id="gotoTop" class="icon-angle-up"></div>
+</div>
 
-  {% if request.resolver_match.namespace != "provider_chat_pages" %}
-  <a
-    class="provider-chat-invite"
-    href="{% url 'provider_chat_pages:chat' %}{% if provider.slug %}?provider={{ provider.slug|urlencode }}{% endif %}"
-    data-chat-invite
-    data-message="Ask me LGBTQ+ health questions or find a provider."
-    aria-label="Ask me LGBTQ+ health questions or find a provider"
-    hidden
-  >
-    <span class="provider-chat-invite-typing" aria-hidden="true">
-      <span></span><span></span><span></span>
-    </span>
-    <span class="provider-chat-invite-text" data-chat-invite-text></span>
-  </a>
-  <a
-    class="provider-chat-launcher"
-    href="{% url 'provider_chat_pages:chat' %}{% if provider.slug %}?provider={{ provider.slug|urlencode }}{% endif %}"
-    aria-label="Open the Affirm Care provider assistant"
-    title="Open provider assistant"
-  >
-    <img
-      class="provider-chat-launcher-icon"
-      src="{% static 'pages/images/icons/affirm-care-bot.png' %}"
-      alt=""
-      aria-hidden="true"
-    >
-    <span class="provider-chat-launcher-badge" aria-hidden="true"></span>
-  </a>
-  {% endif %}
+</header><!-- #header end -->
 
-  <script src="{% static 'pages/js/jquery.js' %}"></script>
-  <script src="{% static 'pages/js/plugins.js' %}"></script>
-  <script src="{% static 'pages/js/functions.js' %}"></script>
-  <script src="{% static 'provider_chat/js/launcher.js' %}"></script>
-  {% block extra_js %}{% endblock %}
-</body>
-</html>
+
+{% block content %}{% endblock %}
+
+
+<footer id="footer" class="dark">
+
+  <div id="copyrights">
+
+    <div class="container clearfix">
+
+      <div class="col_half">
+        Copyrights &copy; {% now "Y" %} Affirm Care.
+      </div>
+
+      <div class="col_half col_last tright">
+        <i class="icon-envelope2"></i> hello@affirmcare.org
+      </div>
+
+    </div>
+
+  </div>
+
+</footer>
+
+
+{% if request.resolver_match.namespace != "provider_chat_pages" %}
+
+<a
+  class="provider-chat-invite"
+  href="{% url 'provider_chat_pages:chat' %}{% if provider.slug %}?provider={{ provider.slug|urlencode }}{% endif %}"
+  data-chat-invite
+  data-message="Ask me LGBTQ+ health questions or find a provider."
+  aria-label="Ask me LGBTQ+ health questions or find a provider"
+  hidden
+>
+
+  <span class="provider-chat-invite-typing" aria-hidden="true">
+    <span></span><span></span><span></span>
+  </span>
+
+  <span class="provider-chat-invite-text" data-chat-invite-text></span>
+
+</a>
+
+{% endif %}
+
+
+{% block extra_js %}{% endblock %}
