@@ -170,6 +170,7 @@ class ProviderResultsView(TemplateView):
 
 about_view = TemplateView.as_view(template_name="pages/about.html")
 
+insurance_view = TemplateView.as_view(template_name="pages/insurance.html")
 
 def robots_txt(request):
     sitemap_url = request.build_absolute_uri(reverse("sitemap"))
