@@ -1,7 +1,15 @@
-{% extends "base.html" %}
+{% extends "pages/index.html" %}
+
+{% block page_title %}AffirmCare News{% endblock %}
+
+{% block meta_description %}
+News, updates, and information about LGBTQ+ healthcare and gender-affirming care.
+{% endblock %}
 
 {% block content %}
+
 <div class="container py-5">
+
     <div class="text-center mb-5">
         <h1>AffirmCare News</h1>
         <p class="lead">
@@ -10,14 +18,19 @@
     </div>
 
     <div class="row">
-        <div class="col-12">
-            <div class="card p-4">
+        <div class="col-lg-8 mx-auto">
+
+            <article class="card p-4 mb-4">
                 <h2>Latest News</h2>
                 <p>
-                    News and healthcare updates will appear here.
+                    Stay up to date with news and developments in LGBTQ+ healthcare,
+                    gender-affirming care, healthcare policy, and more.
                 </p>
-            </div>
+            </article>
+
         </div>
     </div>
+
 </div>
+
 {% endblock %}
