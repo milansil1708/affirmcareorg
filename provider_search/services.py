@@ -137,7 +137,9 @@ def get_public_directory_catalog():
             .distinct()
         )
     ],
-    "services": list(Service.objects.order_by("name").values("slug", "name")),
+    "services": list(
+        Service.objects.order_by("name").values("slug", "name")
+    ),
     "affirming_features": list(
         AffirmingFeature.objects.order_by("label").values(
             "code", "label"
