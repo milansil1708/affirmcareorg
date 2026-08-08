@@ -129,7 +129,7 @@ def get_public_directory_catalog():
     catalog = {
         "states": list(
             ProviderLocation.objects.filter(organization__is_active=True)
-            .exclude(state_code="")
+            .exclude(state_code__in=["", "Virginia"])
             .order_by("state_code")
             .values_list("state_code", flat=True)
             .distinct()
