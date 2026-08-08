@@ -385,7 +385,7 @@ body.provider-chat-layout #top-search {
 
 .chat-suggestion {
   display: flex;
-  min-width: calc((100% - 30px) / 4);
+  min-width: calc((100% - 40px) / 4.3);
   min-height: 88px;
   align-items: flex-start;
   gap: 10px;
