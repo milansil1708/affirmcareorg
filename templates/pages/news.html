@@ -6,92 +6,149 @@
 News, updates, and information about LGBTQ+ healthcare and gender-affirming care.
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Match the compact header used on the provider chat page */
+    body:has(.affirmcare-news-page) #header,
+    body:has(.affirmcare-news-page) #header-wrap {
+        height: 60px;
+    }
+
+    body:has(.affirmcare-news-page) #logo a.affirmcare-logo {
+        padding: 13px 0;
+        font-size: 26px;
+    }
+
+    body:has(.affirmcare-news-page) #logo .affirmcare-logo-main {
+        color: #0a2f2a;
+        text-shadow: none;
+    }
+
+    body:has(.affirmcare-news-page) #logo .affirmcare-logo-accent {
+        color: #0a7a6f;
+        text-shadow: none;
+    }
+
+    body:has(.affirmcare-news-page) #primary-menu > ul > li > a,
+    body:has(.affirmcare-news-page) #primary-menu .logout-menu-button {
+        height: 60px;
+        padding-top: 19px;
+        padding-bottom: 19px;
+    }
+
+    body:has(.affirmcare-news-page) #top-search {
+        margin-top: 23px;
+        margin-bottom: 23px;
+    }
+
+    @media (max-width: 991.98px) {
+        body:has(.affirmcare-news-page) #primary-menu-trigger,
+        body:has(.affirmcare-news-page) #top-search > a {
+            top: 5px;
+        }
+    }
+
+    @media (max-width: 767px) {
+        body:has(.affirmcare-news-page) #logo a.affirmcare-logo {
+            font-size: 24px;
+            padding: 16px 0;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<section class="section m-0" style="padding: 60px 0 80px;">
-    <div class="container">
+<div class="affirmcare-news-page">
 
-        <div class="text-center mb-5">
-            <span style="
-                display: block;
-                margin-bottom: 8px;
-                color: #c75f73;
-                font-size: 12px;
-                font-weight: 800;
-                letter-spacing: 1px;
-                text-transform: uppercase;
-            ">
-                AffirmCare
-            </span>
+    <section class="section m-0" style="padding: 60px 0 80px;">
+        <div class="container">
 
-            <h1 style="
-                margin-bottom: 12px;
-                color: #07544e;
-                font-size: 36px;
-            ">
-                News
-            </h1>
+            <div class="text-center mb-5">
 
-            <p style="
-                max-width: 700px;
-                margin: 0 auto;
-                color: #60716f;
-                font-size: 17px;
-                line-height: 1.6;
-            ">
-                The latest news, updates, and information about LGBTQ+ healthcare,
-                gender-affirming care, and healthcare policy.
-            </p>
-        </div>
-
-        <div class="row">
-
-            <div class="col-lg-8 mx-auto">
-
-                <article style="
-                    padding: 30px;
-                    border: 1px solid #d6e5e2;
-                    border-radius: 10px;
-                    background: #ffffff;
+                <span style="
+                    display: block;
+                    margin-bottom: 8px;
+                    color: #c75f73;
+                    font-size: 12px;
+                    font-weight: 800;
+                    letter-spacing: 1px;
+                    text-transform: uppercase;
                 ">
+                    AffirmCare
+                </span>
 
-                    <span style="
-                        display: block;
-                        margin-bottom: 8px;
-                        color: #c75f73;
-                        font-size: 11px;
-                        font-weight: 800;
-                        letter-spacing: 1px;
-                        text-transform: uppercase;
+                <h1 style="
+                    margin-bottom: 12px;
+                    color: #07544e;
+                    font-size: 36px;
+                ">
+                    News
+                </h1>
+
+                <p style="
+                    max-width: 700px;
+                    margin: 0 auto;
+                    color: #60716f;
+                    font-size: 17px;
+                    line-height: 1.6;
+                ">
+                    The latest news, updates, and information about LGBTQ+ healthcare,
+                    gender-affirming care, and healthcare policy.
+                </p>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-lg-8 mx-auto">
+
+                    <article style="
+                        padding: 30px;
+                        border: 1px solid #d6e5e2;
+                        border-radius: 10px;
+                        background: #ffffff;
                     ">
-                        Latest News
-                    </span>
 
-                    <h2 style="
-                        margin-bottom: 15px;
-                        color: #07544e;
-                    ">
-                        LGBTQ+ Healthcare News & Updates
-                    </h2>
+                        <span style="
+                            display: block;
+                            margin-bottom: 8px;
+                            color: #c75f73;
+                            font-size: 11px;
+                            font-weight: 800;
+                            letter-spacing: 1px;
+                            text-transform: uppercase;
+                        ">
+                            Latest News
+                        </span>
 
-                    <p style="
-                        margin-bottom: 0;
-                        color: #60716f;
-                        font-size: 15px;
-                        line-height: 1.7;
-                    ">
-                        Stay up to date with developments in LGBTQ+ healthcare,
-                        gender-affirming care, healthcare policy, insurance,
-                        and access to care.
-                    </p>
+                        <h2 style="
+                            margin-bottom: 15px;
+                            color: #07544e;
+                        ">
+                            LGBTQ+ Healthcare News & Updates
+                        </h2>
 
-                </article>
+                        <p style="
+                            margin-bottom: 0;
+                            color: #60716f;
+                            font-size: 15px;
+                            line-height: 1.7;
+                        ">
+                            Stay up to date with developments in LGBTQ+ healthcare,
+                            gender-affirming care, healthcare policy, insurance,
+                            and access to care.
+                        </p>
+
+                    </article>
+
+                </div>
 
             </div>
 
         </div>
+    </section>
 
-    </div>
-</section>
+</div>
 
 {% endblock %}
