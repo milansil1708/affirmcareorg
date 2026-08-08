@@ -1,4 +1,4 @@
-"""Directory-backed starter searches for the provider chat."""
+"""Starter prompts for the Affirm Care healthcare assistant."""
 
 from django.conf import settings
 from django.core.cache import cache
@@ -9,82 +9,85 @@ from provider_search.services import search_providers
 
 SUGGESTION_DEFINITIONS = (
     {
-        "id": "new-york-providers",
-        "label": "Providers in New York",
-        "prompt": "Find providers in New York",
+        "id": "affirming-provider",
+        "label": "Find an affirming provider",
+        "prompt": "Find an LGBTQ+ affirming healthcare provider",
+        "icon": "fa-user-doctor",
+        "filters": {},
+    },
+    {
+        "id": "providers-near-me",
+        "label": "Find providers near me",
+        "prompt": "Find LGBTQ+ affirming healthcare providers near me",
         "icon": "fa-location-dot",
-        "filters": {"state_code": "NY"},
+        "filters": {},
     },
     {
-        "id": "california-providers",
-        "label": "Providers in California",
-        "prompt": "Find providers in California",
-        "icon": "fa-location-dot",
-        "filters": {"state_code": "CA"},
+        "id": "what-is-hrt",
+        "label": "What is HRT?",
+        "prompt": "What is HRT?",
+        "icon": "fa-circle-question",
+        "filters": {},
     },
     {
-        "id": "telehealth-providers",
-        "label": "Telehealth providers",
-        "prompt": "Find telehealth providers",
-        "icon": "fa-laptop-medical",
-        "filters": {"delivery_modes": ["telehealth"]},
+        "id": "gender-affirming-care",
+        "label": "How does gender-affirming care work?",
+        "prompt": "How does gender-affirming care work?",
+        "icon": "fa-heart-pulse",
+        "filters": {},
     },
     {
-        "id": "accessible-clinics",
-        "label": "Accessible clinics",
-        "prompt": "Find wheelchair-accessible clinics",
-        "icon": "fa-wheelchair-move",
-        "filters": {
-            "org_types": ["clinic"],
-            "wheelchair_accessible": True,
-        },
+        "id": "healthcare-options",
+        "label": "What healthcare options are available?",
+        "prompt": "What healthcare options are available for LGBTQ+ people?",
+        "icon": "fa-notes-medical",
+        "filters": {},
     },
     {
-        "id": "youth-services",
-        "label": "Youth services",
-        "prompt": "Find providers offering youth services",
-        "icon": "fa-people-roof",
-        "filters": {"age_groups": ["youth"]},
+        "id": "insurance",
+        "label": "Does insurance cover gender-affirming care?",
+        "prompt": "Does insurance cover gender-affirming care?",
+        "icon": "fa-file-medical",
+        "filters": {},
     },
     {
-        "id": "informed-consent",
-        "label": "Informed consent",
-        "prompt": "Find providers that use informed consent",
-        "icon": "fa-shield-heart",
-        "filters": {"affirming_feature_codes": ["informed-consent"]},
+        "id": "care-cost",
+        "label": "How much does gender-affirming care cost?",
+        "prompt": "How much does gender-affirming care cost?",
+        "icon": "fa-dollar-sign",
+        "filters": {},
     },
     {
-        "id": "gender-neutral-restrooms",
-        "label": "Gender-neutral restrooms",
-        "prompt": "Find providers with gender-neutral restrooms",
-        "icon": "fa-restroom",
-        "filters": {"gender_neutral_restrooms": True},
-    },
-    {
-        "id": "public-transit",
-        "label": "Public-transit access",
-        "prompt": "Find providers with public-transit access",
-        "icon": "fa-train-subway",
-        "filters": {"public_transit_access": True},
-    },
-    {
-        "id": "online-booking",
-        "label": "Online booking",
-        "prompt": "Find providers with online booking",
-        "icon": "fa-calendar-check",
-        "filters": {"has_booking_url": True},
+        "id": "prepare-for-visit",
+        "label": "What should I know before seeing a provider?",
+        "prompt": "What should I know before seeing an LGBTQ+ affirming healthcare provider?",
+        "icon": "fa-clipboard-check",
+        "filters": {},
     },
 )
 
 
 def get_available_suggestions():
-    """Return only starter searches that currently produce public results."""
+    """Return starter prompts for the healthcare assistant."""
+
     cached_suggestions = cache.get(CHAT_SUGGESTIONS_CACHE_KEY)
     if cached_suggestions is not None:
         return cached_suggestions
 
     available = []
+
     for definition in SUGGESTION_DEFINITIONS:
+        # Informational questions do not require a provider-directory result.
+        if not definition["filters"]:
+            available.append(
+                {
+                    **definition,
+                    "filters": definition["filters"].copy(),
+                }
+            )
+            continue
+
+        # Provider searches should only appear when they have public results.
         if search_providers(definition["filters"]).exists():
             available.append(
                 {
@@ -92,9 +95,11 @@ def get_available_suggestions():
                     "filters": definition["filters"].copy(),
                 }
             )
+
     cache.set(
         CHAT_SUGGESTIONS_CACHE_KEY,
         available,
         settings.CHAT_SUGGESTIONS_CACHE_SECONDS,
     )
+
     return available
