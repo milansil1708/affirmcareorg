@@ -126,31 +126,24 @@ def get_public_directory_catalog():
     if catalog is not None:
         return catalog
 
-    catalog = {
-     "states": [
-    "DC"
-    if state.strip().lower() in {
-        "district of columbia",
-        "washington dc",
-        "washington, dc",
-        "dc",
-    }
-    else state
-    for state in (
-        ProviderLocation.objects.filter(organization__is_active=True)
-        .exclude(state_code__in=["", "Virginia"])
-        .order_by("state_code")
-        .values_list("state_code", flat=True)
-        .distinct()
-    )
-],
-        "services": list(Service.objects.order_by("name").values("slug", "name")),
-        "affirming_features": list(
-            AffirmingFeature.objects.order_by("label").values(
-                "code", "label"
-            )
-        ),
-    }
+  catalog = {
+    "states": [
+        "DC" if state.strip().lower() == "district of columbia" else state
+        for state in (
+            ProviderLocation.objects.filter(organization__is_active=True)
+            .exclude(state_code__in=["", "Virginia"])
+            .order_by("state_code")
+            .values_list("state_code", flat=True)
+            .distinct()
+        )
+    ],
+    "services": list(Service.objects.order_by("name").values("slug", "name")),
+    "affirming_features": list(
+        AffirmingFeature.objects.order_by("label").values(
+            "code", "label"
+        )
+    ),
+}
     cache.set(
         DIRECTORY_CATALOG_CACHE_KEY,
         catalog,
