@@ -794,7 +794,7 @@ body.provider-chat-layout #top-search {
   }
 
   .chat-suggestion {
-    min-width: calc((100% - 16px) / 3);
+    min-width: calc((100% - 30px) / 4);
     min-height: 78px;
     gap: 8px;
     padding: 11px;
