@@ -127,13 +127,16 @@ def get_public_directory_catalog():
         return catalog
 
     catalog = {
-        "states": list(
-            ProviderLocation.objects.filter(organization__is_active=True)
-            .exclude(state_code__in=["", "Virginia"])
-            .order_by("state_code")
-            .values_list("state_code", flat=True)
-            .distinct()
-        ),
+       "states": [
+    "DC" if state == "District of Columbia" else state
+    for state in (
+        ProviderLocation.objects.filter(organization__is_active=True)
+        .exclude(state_code__in=["", "Virginia"])
+        .order_by("state_code")
+        .values_list("state_code", flat=True)
+        .distinct()
+    )
+],
         "services": list(Service.objects.order_by("name").values("slug", "name")),
         "affirming_features": list(
             AffirmingFeature.objects.order_by("label").values(
