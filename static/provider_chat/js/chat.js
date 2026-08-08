@@ -6,7 +6,7 @@
 
   var storageKey = "affirmcare.providerChat.v1";
   var welcomeMessage =
-    "Welcome to Affirm Care. Tell me what kind of provider you need, where you want care, and which services or access features matter to you.";
+    "Welcome to Affirm Care. Whether you have a question or need help finding care, I'm here to help.";
   var messageList = document.getElementById("chat-message-list");
   var suggestions = document.getElementById("chat-suggestions");
   var suggestionTrack = document.getElementById("chat-suggestion-track");
