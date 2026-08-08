@@ -128,13 +128,14 @@ def get_public_directory_catalog():
 
     catalog = {
      "states": [
-    "DC" if state.strip().lower() in {
-        "district of columbia",
+    "DC"
+    if state.strip().lower() in {
         "district of columbia",
         "washington dc",
         "washington, dc",
         "dc",
-    } else state
+    }
+    else state
     for state in (
         ProviderLocation.objects.filter(organization__is_active=True)
         .exclude(state_code__in=["", "Virginia"])
