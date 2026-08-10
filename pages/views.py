@@ -10,6 +10,7 @@ from provider_search.services import (
     search_providers,
 )
 
+from .news_feed import get_news_sections
 
 PROVIDER_RESULTS_PAGE_SIZE = 12
 TRUE_VALUES = {"1", "true", "yes", "on"}
@@ -170,7 +171,16 @@ class ProviderResultsView(TemplateView):
 
 about_view = TemplateView.as_view(template_name="pages/about.html")
 
-news_view = TemplateView.as_view(template_name="pages/news.html")
+class NewsView(TemplateView):
+    template_name = "pages/news.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["news_sections"] = get_news_sections()
+        return context
+
+
+news_view = NewsView.as_view()
 
 def robots_txt(request):
     sitemap_url = request.build_absolute_uri(reverse("sitemap"))
