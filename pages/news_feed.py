@@ -1,4 +1,3 @@
-import re
 import urllib.request
 import xml.etree.ElementTree as ET
 
@@ -13,26 +12,6 @@ NEWS_FEEDS = {
     "Healthcare": "https://tools.prnewswire.com/en-us/live/28746/rss/fulltext",
     "AI & Health Care": "https://tools.prnewswire.com/en-us/live/28749/rss/fulltext",
 }
-
-
-def clean_html(text):
-    if not text:
-        return ""
-
-    text = re.sub(r"<[^>]+>", " ", text)
-    text = re.sub(r"\s+", " ", text)
-
-    return text.strip()
-
-
-def get_element_text(item, name):
-    for child in item:
-        tag = child.tag.split("}")[-1]
-
-        if tag == name:
-            return "".join(child.itertext()).strip()
-
-    return ""
 
 
 def fetch_news_feed(url, limit=6):
@@ -56,20 +35,26 @@ def fetch_news_feed(url, limit=6):
             if item.tag.split("}")[-1] != "item":
                 continue
 
-            title = get_element_text(item, "title")
-            link = get_element_text(item, "link")
-            description = get_element_text(item, "description")
-            pub_date = get_element_text(item, "pubDate")
+            values = {}
+
+            for child in item:
+                tag = child.tag.split("}")[-1]
+                values[tag] = "".join(child.itertext()).strip()
+
+            title = values.get("title", "")
+            link = values.get("link", "")
+            description = values.get("description", "")
+            pub_date = values.get("pubDate", "")
 
             if not title or not link:
                 continue
 
             stories.append(
                 {
-                    "title": clean_html(title),
-                    "link": link.strip(),
-                    "description": clean_html(description),
-                    "pub_date": pub_date.strip(),
+                    "title": title,
+                    "link": link,
+                    "description": description,
+                    "pub_date": pub_date,
                 }
             )
 
@@ -78,8 +63,15 @@ def fetch_news_feed(url, limit=6):
 
         return stories
 
-    except Exception:
-        return []
+    except Exception as exc:
+        return [
+            {
+                "title": "RSS ERROR",
+                "link": "#",
+                "description": f"{type(exc).__name__}: {exc}",
+                "pub_date": "",
+            }
+        ]
 
 
 def get_news_sections():
@@ -87,7 +79,7 @@ def get_news_sections():
 
     for category, url in NEWS_FEEDS.items():
         cache_key = (
-            f"affirmcare_news_v2_"
+            f"affirmcare_news_diagnostic_"
             f"{category.lower().replace(' ', '_')}"
         )
 
@@ -95,7 +87,7 @@ def get_news_sections():
 
         if stories is None:
             stories = fetch_news_feed(url)
-            cache.set(cache_key, stories, 900)
+            cache.set(cache_key, stories, 60)
 
         sections.append(
             {
