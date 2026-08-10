@@ -15,19 +15,33 @@ NEWS_FEEDS = {
 }
 
 
-def clean_html(text):
-    if not text:
+def clean_text(value):
+    if not value:
         return ""
 
-    text = unescape(text)
-    text = re.sub(r"<[^>]+>", " ", text)
-    text = re.sub(r"\s+", " ", text)
+    value = unescape(value)
 
-    return text.strip()
+    value = re.sub(
+        r"<[^>]+>",
+        " ",
+        value,
+    )
+
+    value = re.sub(
+        r"\s+",
+        " ",
+        value,
+    )
+
+    return value.strip()
 
 
-def get_tag_value(block, tag):
-    pattern = rf"<{tag}(?:\s[^>]*)?>(.*?)</{tag}>"
+def extract_tag(block, tag):
+    pattern = (
+        rf"<{tag}(?:\s[^>]*)?>"
+        rf"(.*?)"
+        rf"</{tag}>"
+    )
 
     match = re.search(
         pattern,
@@ -46,38 +60,57 @@ def fetch_news_feed(url, limit=6):
         request = urllib.request.Request(
             url,
             headers={
-                "User-Agent": "Mozilla/5.0 (compatible; AffirmCare/1.0)",
-                "Accept": "*/*",
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/rss+xml, application/xml, text/xml, */*",
             },
         )
 
-        with urllib.request.urlopen(request, timeout=20) as response:
+        with urllib.request.urlopen(
+            request,
+            timeout=20,
+        ) as response:
             raw_data = response.read()
 
-        xml_text = raw_data.decode("utf-8", errors="replace")
+        xml_text = raw_data.decode(
+            "utf-8",
+            errors="replace",
+        )
 
-        # Find RSS <item> blocks without requiring the entire
-        # document to be valid XML.
         item_blocks = re.findall(
-            r"<item(?:\s[^>]*)?>(.*?)</item>",
+            r"<item\b[^>]*>(.*?)</item\s*>",
             xml_text,
             flags=re.IGNORECASE | re.DOTALL,
         )
 
         stories = []
 
-        for block in item_blocks[:limit]:
-            title = get_tag_value(block, "title")
-            link = get_tag_value(block, "link")
-            description = get_tag_value(block, "description")
-            pub_date = get_tag_value(block, "pubDate")
+        for block in item_blocks:
+            title = extract_tag(block, "title")
+            link = extract_tag(block, "link")
+            description = extract_tag(block, "description")
+            pub_date = extract_tag(block, "pubDate")
 
-            title = clean_html(title)
-            description = clean_html(description)
+            title = clean_text(title)
+            description = clean_text(description)
             link = unescape(link).strip()
-            pub_date = clean_html(pub_date)
+            pub_date = clean_text(pub_date)
 
-            if not title or not link:
+            if not title:
+                continue
+
+            # Some RSS feeds put the link in an encoded form.
+            # Try to find a PRNewswire URL if the normal link is missing.
+            if not link:
+                url_match = re.search(
+                    r"https?://www\.prnewswire\.com/[^\s\"<]+",
+                    block,
+                    flags=re.IGNORECASE,
+                )
+
+                if url_match:
+                    link = unescape(url_match.group(0))
+
+            if not link:
                 continue
 
             stories.append(
@@ -88,6 +121,9 @@ def fetch_news_feed(url, limit=6):
                     "pub_date": pub_date,
                 }
             )
+
+            if len(stories) >= limit:
+                break
 
         return stories
 
@@ -100,7 +136,7 @@ def get_news_sections():
 
     for category, url in NEWS_FEEDS.items():
         cache_key = (
-            f"affirmcare_news_v4_"
+            "affirmcare_news_v5_"
             f"{category.lower().replace(' ', '_')}"
         )
 
@@ -108,7 +144,11 @@ def get_news_sections():
 
         if stories is None:
             stories = fetch_news_feed(url)
-            cache.set(cache_key, stories, 900)
+            cache.set(
+                cache_key,
+                stories,
+                900,
+            )
 
         sections.append(
             {
