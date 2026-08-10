@@ -170,7 +170,21 @@ class ProviderResultsView(TemplateView):
 
 about_view = TemplateView.as_view(template_name="pages/about.html")
 
-news_view = TemplateView.as_view(template_name="pages/news.html")
+import urllib.request
+import xml.etree.ElementTree as ET
+
+from django.core.cache import cache
+from django.core.paginator import Paginator
+from django.http import HttpResponse
+from django.urls import reverse
+from django.views.generic import TemplateView
+
+from provider_search.services import (
+    SORT_EXPRESSIONS,
+    get_featured_providers,
+    get_public_directory_catalog,
+    search_providers,
+)
 
 def robots_txt(request):
     sitemap_url = request.build_absolute_uri(reverse("sitemap"))
