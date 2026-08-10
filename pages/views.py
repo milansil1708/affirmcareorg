@@ -371,8 +371,7 @@ def fetch_news_feed(url, limit=6):
 
         return stories
 
-   except Exception as e:
-    print(f"AffirmCare RSS feed error: {url} -> {e}")
+   except Exception:
     return []
 
 
