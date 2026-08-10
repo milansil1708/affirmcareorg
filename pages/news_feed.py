@@ -87,7 +87,7 @@ def get_news_sections():
 
     for category, url in NEWS_FEEDS.items():
         cache_key = (
-            f"affirmcare_news_"
+            f"affirmcare_news_v2_"
             f"{category.lower().replace(' ', '_')}"
         )
 
