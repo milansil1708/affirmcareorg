@@ -7,152 +7,203 @@
 {% block twitter_title %}AffirmCare News{% endblock %}
 
 {% block meta_description %}
-News, updates, and information about LGBTQ+ healthcare and gender-affirming care.
+News, updates, research, and information about LGBTQ+ healthcare,
+gender-affirming care, healthcare policy, and AI.
 {% endblock %}
 
 {% block extra_css %}
+
 <style>
-    /* Match the compact header used on the provider chat page */
-    body:has(.affirmcare-news-page) #header,
-    body:has(.affirmcare-news-page) #header-wrap {
-        height: 60px;
+    .affirmcare-news-card {
+        height: 100%;
+        padding: 26px;
+        border: 1px solid #d6e5e2;
+        border-radius: 10px;
+        background: #ffffff;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    body:has(.affirmcare-news-page) #logo a.affirmcare-logo {
-        padding: 13px 0;
-        font-size: 26px;
+    .affirmcare-news-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(7, 84, 78, 0.08);
     }
 
-    body:has(.affirmcare-news-page) #logo .affirmcare-logo-main {
-        color: #0a2f2a;
-        text-shadow: none;
+    .affirmcare-news-category {
+        display: block;
+        margin-bottom: 8px;
+        color: #c75f73;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
     }
 
-    body:has(.affirmcare-news-page) #logo .affirmcare-logo-accent {
+    .affirmcare-news-title {
+        margin-bottom: 10px;
+        color: #07544e;
+        font-size: 20px;
+        line-height: 1.35;
+    }
+
+    .affirmcare-news-title a {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .affirmcare-news-title a:hover {
         color: #0a7a6f;
-        text-shadow: none;
     }
 
-    body:has(.affirmcare-news-page) #primary-menu > ul > li > a,
-    body:has(.affirmcare-news-page) #primary-menu .logout-menu-button {
-        height: 60px;
-        padding-top: 19px;
-        padding-bottom: 19px;
+    .affirmcare-news-description {
+        margin-bottom: 14px;
+        color: #60716f;
+        font-size: 14px;
+        line-height: 1.6;
     }
 
-    body:has(.affirmcare-news-page) #top-search {
-        margin-top: 23px;
-        margin-bottom: 23px;
+    .affirmcare-news-date {
+        color: #879795;
+        font-size: 12px;
     }
 
-    @media (max-width: 991.98px) {
-        body:has(.affirmcare-news-page) #primary-menu-trigger,
-        body:has(.affirmcare-news-page) #top-search > a {
-            top: 5px;
-        }
+    .affirmcare-news-link {
+        display: inline-block;
+        margin-top: 14px;
+        color: #0a7a6f;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
     }
 
-    @media (max-width: 767px) {
-        body:has(.affirmcare-news-page) #logo a.affirmcare-logo {
-            font-size: 24px;
-            padding: 16px 0;
-        }
+    .affirmcare-news-link:hover {
+        color: #07544e;
+    }
+
+    .affirmcare-news-section {
+        margin-bottom: 55px;
+    }
+
+    .affirmcare-news-section-title {
+        margin-bottom: 22px;
+        color: #07544e;
+        font-size: 25px;
     }
 </style>
+
 {% endblock %}
 
 {% block content %}
 
-<div class="affirmcare-news-page">
+<section class="section m-0" style="padding: 60px 0 80px;">
+    <div class="container">
 
-    <section class="section m-0" style="padding: 60px 0 80px;">
-        <div class="container">
+        <div class="text-center mb-5">
 
-            <div class="text-center mb-5">
+            <span style="
+                display: block;
+                margin-bottom: 8px;
+                color: #c75f73;
+                font-size: 12px;
+                font-weight: 800;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+            ">
+                AffirmCare
+            </span>
 
-                <span style="
-                    display: block;
-                    margin-bottom: 8px;
-                    color: #c75f73;
-                    font-size: 12px;
-                    font-weight: 800;
-                    letter-spacing: 1px;
-                    text-transform: uppercase;
-                ">
-                    AffirmCare
-                </span>
+            <h1 style="
+                margin-bottom: 12px;
+                color: #07544e;
+                font-size: 36px;
+            ">
+                News
+            </h1>
 
-                <h1 style="
-                    margin-bottom: 12px;
-                    color: #07544e;
-                    font-size: 36px;
-                ">
-                    News
-                </h1>
+            <p style="
+                max-width: 700px;
+                margin: 0 auto;
+                color: #60716f;
+                font-size: 17px;
+                line-height: 1.6;
+            ">
+                The latest news, research, policy developments, and information
+                about LGBTQ+ healthcare and gender-affirming care.
+            </p>
 
-                <p style="
-                    max-width: 700px;
-                    margin: 0 auto;
-                    color: #60716f;
-                    font-size: 17px;
-                    line-height: 1.6;
-                ">
-                    The latest news, updates, and information about LGBTQ+ healthcare,
-                    gender-affirming care, and healthcare policy.
-                </p>
+        </div>
 
-            </div>
+        {% for section in news_sections %}
 
-            <div class="row">
+            <div class="affirmcare-news-section">
 
-                <div class="col-lg-8 mx-auto">
+                <h2 class="affirmcare-news-section-title">
+                    {{ section.category }}
+                </h2>
 
-                    <article style="
-                        padding: 30px;
-                        border: 1px solid #d6e5e2;
-                        border-radius: 10px;
-                        background: #ffffff;
-                    ">
+                <div class="row">
 
-                        <span style="
-                            display: block;
-                            margin-bottom: 8px;
-                            color: #c75f73;
-                            font-size: 11px;
-                            font-weight: 800;
-                            letter-spacing: 1px;
-                            text-transform: uppercase;
-                        ">
-                            Latest News
-                        </span>
+                    {% for story in section.stories %}
 
-                        <h2 style="
-                            margin-bottom: 15px;
-                            color: #07544e;
-                        ">
-                            LGBTQ+ Healthcare News & Updates
-                        </h2>
+                        <div class="col-lg-4 col-md-6 mb-4">
 
-                        <p style="
-                            margin-bottom: 0;
-                            color: #60716f;
-                            font-size: 15px;
-                            line-height: 1.7;
-                        ">
-                            Stay up to date with developments in LGBTQ+ healthcare,
-                            gender-affirming care, healthcare policy, insurance,
-                            and access to care.
-                        </p>
+                            <article class="affirmcare-news-card">
 
-                    </article>
+                                <span class="affirmcare-news-category">
+                                    {{ section.category }}
+                                </span>
+
+                                <h3 class="affirmcare-news-title">
+                                    <a
+                                        href="{{ story.link }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        {{ story.title }}
+                                    </a>
+                                </h3>
+
+                                {% if story.description %}
+                                    <p class="affirmcare-news-description">
+                                        {{ story.description|striptags|truncatewords:30 }}
+                                    </p>
+                                {% endif %}
+
+                                {% if story.pub_date %}
+                                    <div class="affirmcare-news-date">
+                                        {{ story.pub_date }}
+                                    </div>
+                                {% endif %}
+
+                                <a
+                                    class="affirmcare-news-link"
+                                    href="{{ story.link }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Read More →
+                                </a>
+
+                            </article>
+
+                        </div>
+
+                    {% empty %}
+
+                        <div class="col-12">
+                            <p style="color: #60716f;">
+                                News is temporarily unavailable. Please check back soon.
+                            </p>
+                        </div>
+
+                    {% endfor %}
 
                 </div>
 
             </div>
 
-        </div>
-    </section>
+        {% endfor %}
 
-</div>
+    </div>
+</section>
 
 {% endblock %}
