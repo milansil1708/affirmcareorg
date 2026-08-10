@@ -1,5 +1,7 @@
+import re
 import urllib.request
 import xml.etree.ElementTree as ET
+from html import unescape
 
 from django.core.cache import cache
 
@@ -14,18 +16,36 @@ NEWS_FEEDS = {
 }
 
 
+def clean_html(text):
+    if not text:
+        return ""
+
+    text = unescape(text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\s+", " ", text)
+
+    return text.strip()
+
+
 def fetch_news_feed(url, limit=6):
     try:
         request = urllib.request.Request(
             url,
             headers={
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "application/rss+xml, application/xml, text/xml",
+                "User-Agent": "Mozilla/5.0 (compatible; AffirmCare/1.0)",
+                "Accept": "application/rss+xml, application/xml, text/xml, */*",
             },
         )
 
-        with urllib.request.urlopen(request, timeout=15) as response:
+        with urllib.request.urlopen(request, timeout=20) as response:
             xml_data = response.read()
+
+        # Remove problematic control characters before parsing.
+        xml_data = re.sub(
+            rb"[\x00-\x08\x0B\x0C\x0E-\x1F]",
+            b"",
+            xml_data,
+        )
 
         root = ET.fromstring(xml_data)
 
@@ -39,12 +59,16 @@ def fetch_news_feed(url, limit=6):
 
             for child in item:
                 tag = child.tag.split("}")[-1]
-                values[tag] = "".join(child.itertext()).strip()
 
-            title = values.get("title", "")
-            link = values.get("link", "")
-            description = values.get("description", "")
-            pub_date = values.get("pubDate", "")
+                # Preserve the actual text contained in the element.
+                value = "".join(child.itertext()).strip()
+
+                values[tag] = value
+
+            title = clean_html(values.get("title", ""))
+            link = values.get("link", "").strip()
+            description = clean_html(values.get("description", ""))
+            pub_date = values.get("pubDate", "").strip()
 
             if not title or not link:
                 continue
@@ -63,15 +87,8 @@ def fetch_news_feed(url, limit=6):
 
         return stories
 
-    except Exception as exc:
-        return [
-            {
-                "title": "RSS ERROR",
-                "link": "#",
-                "description": f"{type(exc).__name__}: {exc}",
-                "pub_date": "",
-            }
-        ]
+    except Exception:
+        return []
 
 
 def get_news_sections():
@@ -79,7 +96,7 @@ def get_news_sections():
 
     for category, url in NEWS_FEEDS.items():
         cache_key = (
-            f"affirmcare_news_diagnostic_"
+            f"affirmcare_news_v3_"
             f"{category.lower().replace(' ', '_')}"
         )
 
@@ -87,7 +104,7 @@ def get_news_sections():
 
         if stories is None:
             stories = fetch_news_feed(url)
-            cache.set(cache_key, stories, 60)
+            cache.set(cache_key, stories, 900)
 
         sections.append(
             {
