@@ -36,6 +36,33 @@ def clean_text(value):
     return value.strip()
 
 
+def clean_url(value):
+    """
+    Clean RSS article URLs so malformed trailing characters
+    such as '"/' are removed.
+    """
+    if not value:
+        return ""
+
+    value = unescape(value).strip()
+
+    # Remove surrounding quotation marks if present.
+    value = value.strip('"').strip("'").strip()
+
+    # Remove a stray trailing slash after a quotation mark
+    # or a trailing slash after a PRNewswire .html URL.
+    value = re.sub(
+        r'(["\']?)/$',
+        "",
+        value,
+    )
+
+    # Remove any remaining surrounding quotation marks.
+    value = value.strip('"').strip("'").strip()
+
+    return value
+
+
 def extract_tag(block, tag):
     pattern = (
         rf"<{tag}(?:\s[^>]*)?>"
@@ -92,7 +119,7 @@ def fetch_news_feed(url, limit=6):
 
             title = clean_text(title)
             description = clean_text(description)
-            link = unescape(link).strip()
+            link = clean_url(link)
             pub_date = clean_text(pub_date)
 
             if not title:
@@ -108,7 +135,7 @@ def fetch_news_feed(url, limit=6):
                 )
 
                 if url_match:
-                    link = unescape(url_match.group(0))
+                    link = clean_url(url_match.group(0))
 
             if not link:
                 continue
@@ -136,7 +163,7 @@ def get_news_sections():
 
     for category, url in NEWS_FEEDS.items():
         cache_key = (
-            "affirmcare_news_v5_"
+            "affirmcare_news_v6_"
             f"{category.lower().replace(' ', '_')}"
         )
 
