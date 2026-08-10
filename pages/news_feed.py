@@ -1,3 +1,4 @@
+import re
 import urllib.request
 import xml.etree.ElementTree as ET
 
@@ -14,6 +15,26 @@ NEWS_FEEDS = {
 }
 
 
+def clean_html(text):
+    if not text:
+        return ""
+
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\s+", " ", text)
+
+    return text.strip()
+
+
+def get_element_text(item, name):
+    for child in item:
+        tag = child.tag.split("}")[-1]
+
+        if tag == name:
+            return "".join(child.itertext()).strip()
+
+    return ""
+
+
 def fetch_news_feed(url, limit=6):
     try:
         request = urllib.request.Request(
@@ -24,7 +45,7 @@ def fetch_news_feed(url, limit=6):
             },
         )
 
-        with urllib.request.urlopen(request, timeout=10) as response:
+        with urllib.request.urlopen(request, timeout=15) as response:
             xml_data = response.read()
 
         root = ET.fromstring(xml_data)
@@ -35,26 +56,20 @@ def fetch_news_feed(url, limit=6):
             if item.tag.split("}")[-1] != "item":
                 continue
 
-            values = {}
-
-            for child in item:
-                tag = child.tag.split("}")[-1]
-                values[tag] = child.text or ""
-
-            title = values.get("title", "").strip()
-            link = values.get("link", "").strip()
-            description = values.get("description", "").strip()
-            pub_date = values.get("pubDate", "").strip()
+            title = get_element_text(item, "title")
+            link = get_element_text(item, "link")
+            description = get_element_text(item, "description")
+            pub_date = get_element_text(item, "pubDate")
 
             if not title or not link:
                 continue
 
             stories.append(
                 {
-                    "title": title,
-                    "link": link,
-                    "description": description,
-                    "pub_date": pub_date,
+                    "title": clean_html(title),
+                    "link": link.strip(),
+                    "description": clean_html(description),
+                    "pub_date": pub_date.strip(),
                 }
             )
 
