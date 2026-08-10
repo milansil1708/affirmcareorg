@@ -31,11 +31,20 @@ def fetch_news_feed(url, limit=6):
 
         stories = []
 
-        for item in root.findall(".//item")[:limit]:
-            title = item.findtext("title", "").strip()
-            link = item.findtext("link", "").strip()
-            description = item.findtext("description", "").strip()
-            pub_date = item.findtext("pubDate", "").strip()
+        for item in root.iter():
+            if item.tag.split("}")[-1] != "item":
+                continue
+
+            values = {}
+
+            for child in item:
+                tag = child.tag.split("}")[-1]
+                values[tag] = child.text or ""
+
+            title = values.get("title", "").strip()
+            link = values.get("link", "").strip()
+            description = values.get("description", "").strip()
+            pub_date = values.get("pubDate", "").strip()
 
             if not title or not link:
                 continue
@@ -48,6 +57,9 @@ def fetch_news_feed(url, limit=6):
                     "pub_date": pub_date,
                 }
             )
+
+            if len(stories) >= limit:
+                break
 
         return stories
 
