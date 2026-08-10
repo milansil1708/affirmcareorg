@@ -371,8 +371,9 @@ def fetch_news_feed(url, limit=6):
 
         return stories
 
-    except Exception:
-        return []
+   except Exception as e:
+    print(f"AffirmCare RSS feed error: {url} -> {e}")
+    return []
 
 
 class NewsView(TemplateView):
