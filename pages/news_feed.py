@@ -1,6 +1,5 @@
 import re
 import urllib.request
-import xml.etree.ElementTree as ET
 from html import unescape
 
 from django.core.cache import cache
@@ -27,48 +26,56 @@ def clean_html(text):
     return text.strip()
 
 
+def get_tag_value(block, tag):
+    pattern = rf"<{tag}(?:\s[^>]*)?>(.*?)</{tag}>"
+
+    match = re.search(
+        pattern,
+        block,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+
+    if not match:
+        return ""
+
+    return match.group(1).strip()
+
+
 def fetch_news_feed(url, limit=6):
     try:
         request = urllib.request.Request(
             url,
             headers={
                 "User-Agent": "Mozilla/5.0 (compatible; AffirmCare/1.0)",
-                "Accept": "application/rss+xml, application/xml, text/xml, */*",
+                "Accept": "*/*",
             },
         )
 
         with urllib.request.urlopen(request, timeout=20) as response:
-            xml_data = response.read()
+            raw_data = response.read()
 
-        # Remove problematic control characters before parsing.
-        xml_data = re.sub(
-            rb"[\x00-\x08\x0B\x0C\x0E-\x1F]",
-            b"",
-            xml_data,
+        xml_text = raw_data.decode("utf-8", errors="replace")
+
+        # Find RSS <item> blocks without requiring the entire
+        # document to be valid XML.
+        item_blocks = re.findall(
+            r"<item(?:\s[^>]*)?>(.*?)</item>",
+            xml_text,
+            flags=re.IGNORECASE | re.DOTALL,
         )
-
-        root = ET.fromstring(xml_data)
 
         stories = []
 
-        for item in root.iter():
-            if item.tag.split("}")[-1] != "item":
-                continue
+        for block in item_blocks[:limit]:
+            title = get_tag_value(block, "title")
+            link = get_tag_value(block, "link")
+            description = get_tag_value(block, "description")
+            pub_date = get_tag_value(block, "pubDate")
 
-            values = {}
-
-            for child in item:
-                tag = child.tag.split("}")[-1]
-
-                # Preserve the actual text contained in the element.
-                value = "".join(child.itertext()).strip()
-
-                values[tag] = value
-
-            title = clean_html(values.get("title", ""))
-            link = values.get("link", "").strip()
-            description = clean_html(values.get("description", ""))
-            pub_date = values.get("pubDate", "").strip()
+            title = clean_html(title)
+            description = clean_html(description)
+            link = unescape(link).strip()
+            pub_date = clean_html(pub_date)
 
             if not title or not link:
                 continue
@@ -82,9 +89,6 @@ def fetch_news_feed(url, limit=6):
                 }
             )
 
-            if len(stories) >= limit:
-                break
-
         return stories
 
     except Exception:
@@ -96,7 +100,7 @@ def get_news_sections():
 
     for category, url in NEWS_FEEDS.items():
         cache_key = (
-            f"affirmcare_news_v3_"
+            f"affirmcare_news_v4_"
             f"{category.lower().replace(' ', '_')}"
         )
 
