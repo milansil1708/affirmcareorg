@@ -181,6 +181,9 @@ class NewsView(TemplateView):
 
 
 news_view = NewsView.as_view()
+lgbtq_news_view = TemplateView.as_view(
+    template_name="pages/lgbtq_news.html"
+)
 
 def robots_txt(request):
     sitemap_url = request.build_absolute_uri(reverse("sitemap"))
