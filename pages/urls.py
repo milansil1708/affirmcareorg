@@ -6,4 +6,5 @@ urlpatterns = [
     path("providers/", views.ProviderResultsView.as_view(), name="provider_results"),
     path("about/", views.about_view, name="about"),
     path("news/", views.news_view, name="news"),
+    path("lgbtq-news/", views.lgbtq_news_view, name="lgbtq_news"),
 ]
