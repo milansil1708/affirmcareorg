@@ -5,14 +5,16 @@ from autoslug import AutoSlugField
 
 
 # Create your models here.
+
+
 class ProviderOrganization(models.Model):
 
     ORG_TYPE_CHOICES = [
-        ('clinic', 'Clinic'),
-        ('hospital_program', 'Hospital Program'),
-        ('telehealth', 'Telehealth'),
-        ('private_practice', 'Private Practice'),
-        ('nonprofit', 'Nonprofit'),
+        ("clinic", "Clinic"),
+        ("hospital_program", "Hospital Program"),
+        ("telehealth", "Telehealth"),
+        ("private_practice", "Private Practice"),
+        ("nonprofit", "Nonprofit"),
     ]
 
     user = models.ForeignKey(
@@ -23,10 +25,8 @@ class ProviderOrganization(models.Model):
         null=True,
     )
 
-    name = models.CharField(max_length=100)
-
-    # NPI number from the CMS NPPES public dataset.
-    # Used to identify and prevent duplicate provider records.
+    # NPI from the CMS NPPES database.
+    # This lets us uniquely identify imported providers.
     npi = models.CharField(
         max_length=10,
         unique=True,
@@ -34,43 +34,51 @@ class ProviderOrganization(models.Model):
         null=True,
     )
 
+    name = models.CharField(max_length=100)
+
     slug = AutoSlugField(
         populate_from="name",
-        unique=True
+        unique=True,
     )
 
     org_type = models.CharField(
         max_length=50,
-        choices=ORG_TYPE_CHOICES
+        choices=ORG_TYPE_CHOICES,
     )
 
     description = models.TextField()
 
     website_url = models.URLField(
         blank=True,
-        null=True
+        null=True,
     )
 
     booking_url = models.URLField(
         blank=True,
-        null=True
+        null=True,
     )
 
     phone = models.CharField(
-        max_length=20
+        max_length=20,
+        blank=True,
+        null=True,
     )
 
+    # NPPES generally does not provide a provider organization email,
+    # so this needs to be optional for imported records.
     email = models.EmailField(
-        max_length=100
+        max_length=100,
+        blank=True,
+        null=True,
     )
 
     is_active = models.BooleanField(
-        default=True
+        default=True,
     )
 
     last_verified_at = models.DateTimeField(
         blank=True,
-        null=True
+        null=True,
     )
 
     def __str__(self):
@@ -78,6 +86,7 @@ class ProviderOrganization(models.Model):
 
 
 class ProviderOrganizationClaim(models.Model):
+
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         APPROVED = "approved", "Approved"
@@ -106,7 +115,7 @@ class ProviderOrganizationClaim(models.Model):
     )
 
     admin_note = models.TextField(
-        blank=True
+        blank=True,
     )
 
     reviewed_by = models.ForeignKey(
@@ -118,12 +127,12 @@ class ProviderOrganizationClaim(models.Model):
     )
 
     created_at = models.DateTimeField(
-        auto_now_add=True
+        auto_now_add=True,
     )
 
     reviewed_at = models.DateTimeField(
         blank=True,
-        null=True
+        null=True,
     )
 
     class Meta:
@@ -135,7 +144,6 @@ class ProviderOrganizationClaim(models.Model):
                 condition=Q(status="pending"),
                 name="unique_pending_provider_claim",
             ),
-
             models.UniqueConstraint(
                 fields=("claimant",),
                 condition=Q(status="pending"),
@@ -152,75 +160,78 @@ class ProviderOrganizationClaim(models.Model):
 
 
 class ProviderLocation(models.Model):
+
     organization = models.ForeignKey(
         ProviderOrganization,
         on_delete=models.CASCADE,
-        related_name='locations'
+        related_name="locations",
     )
 
     address_line1 = models.CharField(
-        max_length=255
+        max_length=255,
     )
 
     address_line2 = models.CharField(
         max_length=255,
         blank=True,
-        null=True
+        null=True,
     )
 
     city = models.CharField(
-        max_length=100
+        max_length=100,
     )
 
     state_code = models.CharField(
-        max_length=100
+        max_length=100,
     )
 
     zip_code = models.CharField(
-        max_length=20
+        max_length=20,
     )
 
     latitude = models.DecimalField(
         max_digits=9,
         decimal_places=6,
         blank=True,
-        null=True
+        null=True,
     )
 
     longitude = models.DecimalField(
         max_digits=9,
         decimal_places=6,
         blank=True,
-        null=True
+        null=True,
     )
 
     is_primary = models.BooleanField(
-        default=False
+        default=False,
     )
 
     wheelchair_accessible = models.BooleanField(
-        default=False
+        default=False,
     )
 
     gender_neutral_restrooms = models.BooleanField(
-        default=False
+        default=False,
     )
 
     public_transit_notes = models.BooleanField(
-        default=False
+        default=False,
     )
 
     def __str__(self):
         return (
             f"{self.organization.name} - "
-            f"{self.address_line1}, {self.city}"
+            f"{self.address_line1}, "
+            f"{self.city}"
         )
 
 
 class Service(models.Model):
+
     slug = AutoSlugField(
         populate_from="name",
-        unique=True
+        unique=True,
     )
 
     name = models.CharField(
@@ -232,28 +243,29 @@ class Service(models.Model):
 
 
 class OrganizationService(models.Model):
+
     organization = models.ForeignKey(
         ProviderOrganization,
         on_delete=models.CASCADE,
-        related_name='services'
+        related_name="services",
     )
 
     service = models.ForeignKey(
         Service,
         on_delete=models.CASCADE,
-        related_name='organizations'
+        related_name="organizations",
     )
 
     DELIVERY_MODE_CHOICES = [
-        ('in_person', 'In Person'),
-        ('telehealth', 'Telehealth'),
-        ('both', 'Both'),
+        ("in_person", "In Person"),
+        ("telehealth", "Telehealth"),
+        ("both", "Both"),
     ]
 
     AGE_GROUP_CHOICES = [
-        ('adult', 'Adult'),
-        ('youth', 'Youth'),
-        ('all', 'All Ages'),
+        ("adult", "Adult"),
+        ("youth", "Youth"),
+        ("all", "All Ages"),
     ]
 
     delivery_mode = models.CharField(
@@ -268,7 +280,7 @@ class OrganizationService(models.Model):
 
     note = models.TextField(
         blank=True,
-        null=True
+        null=True,
     )
 
     def __str__(self):
@@ -279,13 +291,14 @@ class OrganizationService(models.Model):
 
 
 class AffirmingFeature(models.Model):
+
     code = AutoSlugField(
         populate_from="label",
-        unique=True
+        unique=True,
     )
 
     label = models.CharField(
-        max_length=120
+        max_length=120,
     )
 
     description = models.TextField()
@@ -295,6 +308,7 @@ class AffirmingFeature(models.Model):
 
 
 class ProviderFeature(models.Model):
+
     VALUE_CHOICES = [
         ("yes", "Yes"),
         ("no", "No"),
@@ -304,19 +318,19 @@ class ProviderFeature(models.Model):
     provider = models.ForeignKey(
         ProviderOrganization,
         on_delete=models.CASCADE,
-        related_name='affirming_features'
+        related_name="affirming_features",
     )
 
     feature = models.ForeignKey(
         AffirmingFeature,
         on_delete=models.CASCADE,
-        related_name='providers'
+        related_name="providers",
     )
 
     value = models.CharField(
         max_length=20,
         choices=VALUE_CHOICES,
-        default="unknown"
+        default="unknown",
     )
 
     evidence_note = models.TextField(
@@ -325,10 +339,10 @@ class ProviderFeature(models.Model):
 
     source_url = models.URLField(
         blank=True,
-        null=True
+        null=True,
     )
 
     verified_at = models.DateTimeField(
         blank=True,
-        null=True
+        null=True,
     )
