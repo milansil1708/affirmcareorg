@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from provider_organizations.models import (
     OrganizationService,
+    ProviderLocation,
     ProviderOrganization,
     Service,
 )
@@ -98,6 +99,7 @@ class Command(BaseCommand):
         existing_orgs = 0
         created_services = 0
         created_org_services = 0
+        created_locations = 0
         skipped_rows = 0
 
         try:
@@ -126,6 +128,14 @@ class Command(BaseCommand):
                 name = (row.get("organization_name") or "").strip()
                 website = (row.get("website") or "").strip() or None
                 resource_type = (row.get("resource_type") or "").strip()
+                city = (row.get("city") or "").strip()
+                state = (row.get("state") or "").strip()
+
+                if state.lower() == "district of columbia":
+                    state = "DC"
+                elif len(state) == 2:
+                    state = state.upper()
+
                 services_text = (row.get("services") or "").strip()
                 population = (row.get("population") or "").strip()
                 source_url = (row.get("source_url") or "").strip()
@@ -198,6 +208,34 @@ class Command(BaseCommand):
                         )
                     )
 
+                if state:
+                    location_lookup = {
+                        "organization": organization,
+                        "address_line1": "",
+                        "city": city,
+                        "state_code": state,
+                        "zip_code": "",
+                    }
+
+                    if dry_run:
+                        if organization.pk:
+                            location_exists = ProviderLocation.objects.filter(
+                                **location_lookup
+                            ).exists()
+                            if not location_exists:
+                                created_locations += 1
+                        else:
+                            created_locations += 1
+                    else:
+                        _, location_created = ProviderLocation.objects.get_or_create(
+                            **location_lookup,
+                            defaults={
+                                "is_primary": not organization.locations.exists(),
+                            },
+                        )
+                        if location_created:
+                            created_locations += 1
+
                 if not services_text:
                     continue
 
@@ -268,6 +306,9 @@ class Command(BaseCommand):
         )
         self.stdout.write(
             f"New organization-service links: {created_org_services}"
+        )
+        self.stdout.write(
+            f"New locations: {created_locations}"
         )
         self.stdout.write(
             f"Skipped rows: {skipped_rows}"
