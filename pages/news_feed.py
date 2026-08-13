@@ -292,6 +292,26 @@ def is_relevant_story(title, description, category):
     return score >= 6
 
 
+
+def extract_tag(block, tag):
+    pattern = (
+        rf"<{tag}(?:\s[^>]*)?>"
+        rf"(.*?)"
+        rf"</{tag}>"
+    )
+
+    match = re.search(
+        pattern,
+        block,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+
+    if not match:
+        return ""
+
+    return match.group(1).strip()
+
+
 def fetch_news_feed(url, category, limit=6):
     try:
         request = urllib.request.Request(
