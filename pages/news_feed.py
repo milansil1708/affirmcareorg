@@ -331,8 +331,26 @@ def is_relevant_story(title, description, category):
         category,
     )
 
-    # Require meaningful relevance to AffirmCare.
-    return score >= 6
+    if score < 6:
+        return False
+
+    full_text = f" {title} {description} ".casefold()
+
+    # Specialized sections must genuinely match their category,
+    # even when the story is strongly relevant to AffirmCare overall.
+    if category != "Latest News":
+        category_terms = CATEGORY_RELEVANCE_TERMS.get(
+            category,
+            (),
+        )
+
+        if category_terms and not contains_any_term(
+            full_text,
+            category_terms,
+        ):
+            return False
+
+    return True
 
 
 
@@ -443,7 +461,7 @@ def get_news_sections():
 
     for category, url in NEWS_FEEDS.items():
         cache_key = (
-            "affirmcare_news_v10_"
+            "affirmcare_news_v11_"
             f"{category.lower().replace(' ', '_')}"
         )
 
