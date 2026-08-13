@@ -385,23 +385,11 @@ class Command(BaseCommand):
                     skipped_rows += 1
                     continue
 
-                description_parts = []
-
-                if notes:
-                    description_parts.append(notes)
-
-                if source_type:
-                    description_parts.append(f"Source: {source_type}")
-
-                if verification_status:
-                    description_parts.append(
-                        f"Verification status: {verification_status}"
-                    )
-
-                if source_url:
-                    description_parts.append(f"Source URL: {source_url}")
-
-                description = "\n\n".join(description_parts)
+                description = (
+                    f"Source: {source_url}"
+                    if source_url
+                    else ""
+                )
 
                 existing = self.find_existing_organization(name, website)
 
