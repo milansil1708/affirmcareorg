@@ -10,7 +10,10 @@ from django.views.decorators.http import require_POST
 
 from provider_search.services import public_provider_card_queryset
 
-from .claims import notify_admin_of_claim
+from .claims import (
+    notify_admin_of_claim,
+    notify_admin_of_new_provider,
+)
 from .forms import (
     OrganizationServiceFormSet,
     ProviderFeatureSelectionForm,
@@ -27,20 +30,40 @@ from .models import (
 
 
 ACCOUNT_STEPS = (
-    ("organization", "Provider information", "Organization and contact details"),
-    ("location", "Provider location", "Primary location and accessibility"),
-    ("services", "Services", "Care offered and delivery details"),
-    ("features", "Affirming features", "Inclusive facilities and practices"),
+    (
+        "organization",
+        "Provider information",
+        "Organization and contact details",
+    ),
+    (
+        "location",
+        "Provider location",
+        "Primary location and accessibility",
+    ),
+    (
+        "services",
+        "Services",
+        "Care offered and delivery details",
+    ),
+    (
+        "features",
+        "Affirming features",
+        "Inclusive facilities and practices",
+    ),
 )
 
 
 def _provider_account_queryset():
     return ProviderOrganization.objects.annotate(
         account_has_location=Exists(
-            ProviderLocation.objects.filter(organization_id=OuterRef("pk"))
+            ProviderLocation.objects.filter(
+                organization_id=OuterRef("pk")
+            )
         ),
         account_has_services=Exists(
-            OrganizationService.objects.filter(organization_id=OuterRef("pk"))
+            OrganizationService.objects.filter(
+                organization_id=OuterRef("pk")
+            )
         ),
         account_has_features=Exists(
             ProviderFeature.objects.filter(
@@ -76,12 +99,20 @@ def provider_detail_view(request, slug):
 
     provider_services = list(provider.services.all())
     provider_locations = list(provider.locations.all())
-    primary_location = provider_locations[0] if provider_locations else None
+    primary_location = (
+        provider_locations[0]
+        if provider_locations
+        else None
+    )
 
     if primary_location:
-        if primary_location.latitude and primary_location.longitude:
+        if (
+            primary_location.latitude
+            and primary_location.longitude
+        ):
             map_query = (
-                f"{primary_location.latitude},{primary_location.longitude}"
+                f"{primary_location.latitude},"
+                f"{primary_location.longitude}"
             )
         else:
             full_address = ", ".join(
@@ -99,14 +130,15 @@ def provider_detail_view(request, slug):
             map_query = full_address
 
         map_embed_url = (
-            f"https://www.google.com/maps?q="
+            "https://www.google.com/maps?q="
             f"{quote_plus(map_query)}&output=embed"
         )
     else:
         map_embed_url = None
 
     provider_service_ids = {
-        service.service_id for service in provider_services
+        service.service_id
+        for service in provider_services
     }
 
     similar_queryset = (
@@ -121,13 +153,20 @@ def provider_detail_view(request, slug):
                 distinct=True,
             )
         )
-        .order_by("-shared_service_count", "name", "id")[:12]
+        .order_by(
+            "-shared_service_count",
+            "name",
+            "id",
+        )[:12]
     )
 
     similar_providers = list(similar_queryset)
 
     offers_telehealth = any(
-        service.delivery_mode in {"telehealth", "both"}
+        service.delivery_mode in {
+            "telehealth",
+            "both",
+        }
         for service in provider_services
     )
 
@@ -135,7 +174,10 @@ def provider_detail_view(request, slug):
     pending_claim = None
     claimant_has_other_organization = False
 
-    if request.user.is_authenticated and provider.user_id is None:
+    if (
+        request.user.is_authenticated
+        and provider.user_id is None
+    ):
         pending_claim = (
             request.user.provider_claim_requests.filter(
                 status=ProviderOrganizationClaim.Status.PENDING,
@@ -144,7 +186,10 @@ def provider_detail_view(request, slug):
             .first()
         )
 
-        if pending_claim and pending_claim.organization_id == provider.id:
+        if (
+            pending_claim
+            and pending_claim.organization_id == provider.id
+        ):
             current_claim = pending_claim
 
         claimant_has_other_organization = (
@@ -161,9 +206,14 @@ def provider_detail_view(request, slug):
         "similar_providers": similar_providers,
         "current_claim": current_claim,
         "pending_claim": pending_claim,
-        "claimant_has_other_organization": claimant_has_other_organization,
+        "claimant_has_other_organization": (
+            claimant_has_other_organization
+        ),
         "canonical_url": request.build_absolute_uri(
-            reverse("provider_detail", args=(provider.slug,))
+            reverse(
+                "provider_detail",
+                args=(provider.slug,),
+            )
         ),
     }
 
@@ -178,7 +228,9 @@ def provider_detail_view(request, slug):
 @require_POST
 def claim_provider_organization_view(request, slug):
     provider = get_object_or_404(
-        ProviderOrganization.objects.filter(is_active=True),
+        ProviderOrganization.objects.filter(
+            is_active=True
+        ),
         slug=slug,
     )
 
@@ -192,9 +244,11 @@ def claim_provider_organization_view(request, slug):
             slug=provider.slug,
         )
 
-    if request.user.provider_organizations.exclude(
-        pk=provider.pk
-    ).exists():
+    if (
+        request.user.provider_organizations
+        .exclude(pk=provider.pk)
+        .exists()
+    ):
         messages.error(
             request,
             "Your account already manages a provider organization.",
@@ -213,18 +267,22 @@ def claim_provider_organization_view(request, slug):
     )
 
     if pending_claim:
-        if pending_claim.organization_id == provider.pk:
+        if (
+            pending_claim.organization_id
+            == provider.pk
+        ):
             messages.info(
                 request,
-                "You already have a pending claim for this organization.",
+                "You already have a pending claim "
+                "for this organization.",
             )
         else:
             messages.error(
                 request,
                 "You already have a pending claim for "
-                f"{pending_claim.organization.name}. Wait for an "
-                "administrator decision before claiming another "
-                "organization.",
+                f"{pending_claim.organization.name}. "
+                "Wait for an administrator decision before "
+                "claiming another organization.",
             )
 
         return redirect(
@@ -251,19 +309,24 @@ def claim_provider_organization_view(request, slug):
 
         if (
             pending_claim
-            and pending_claim.organization_id == provider.pk
+            and pending_claim.organization_id
+            == provider.pk
         ):
             message = (
-                "You already have a pending claim for this organization."
+                "You already have a pending claim "
+                "for this organization."
             )
         else:
             message = (
-                "You already have a pending claim. Wait for an "
-                "administrator decision before claiming another "
-                "organization."
+                "You already have a pending claim. "
+                "Wait for an administrator decision before "
+                "claiming another organization."
             )
 
-        messages.error(request, message)
+        messages.error(
+            request,
+            message,
+        )
 
         return redirect(
             "provider_detail",
@@ -271,12 +334,16 @@ def claim_provider_organization_view(request, slug):
         )
 
     transaction.on_commit(
-        lambda: notify_admin_of_claim(claim, request)
+        lambda: notify_admin_of_claim(
+            claim,
+            request,
+        )
     )
 
     messages.success(
         request,
-        "Your claim request was submitted for administrator review.",
+        "Your claim request was submitted for "
+        "administrator review.",
     )
 
     return redirect(
@@ -295,13 +362,20 @@ def provider_account_view(request):
     )
 
     primary_location = (
-        organization.locations.order_by("-is_primary", "pk").first()
+        organization.locations
+        .order_by("-is_primary", "pk")
+        .first()
         if organization
         else None
     )
 
-    completion = _provider_account_completion(organization)
-    is_complete = all(completion.values())
+    completion = _provider_account_completion(
+        organization
+    )
+
+    is_complete = all(
+        completion.values()
+    )
 
     first_incomplete = next(
         (
@@ -329,11 +403,14 @@ def provider_account_view(request):
     )
 
     if not is_complete:
-        first_incomplete_index = step_keys.index(
-            first_incomplete
+        first_incomplete_index = (
+            step_keys.index(first_incomplete)
         )
 
-        if step_keys.index(active_step) > first_incomplete_index:
+        if (
+            step_keys.index(active_step)
+            > first_incomplete_index
+        ):
             active_step = first_incomplete
 
     form = None
@@ -375,7 +452,9 @@ def provider_account_view(request):
             with transaction.atomic():
 
                 if active_step == "organization":
-                    is_new_organization = organization is None
+                    is_new_organization = (
+                        organization is None
+                    )
 
                     organization = form.save(
                         commit=False
@@ -383,12 +462,22 @@ def provider_account_view(request):
 
                     organization.user = request.user
 
-                    # New provider submissions ALWAYS start inactive.
-                    # They must be reviewed and approved by an administrator.
+                    # New provider submissions always start
+                    # inactive and require administrator approval.
                     if is_new_organization:
                         organization.is_active = False
 
                     organization.save()
+
+                    # Send the administrator an email for a
+                    # brand-new provider submission.
+                    if is_new_organization:
+                        transaction.on_commit(
+                            lambda: notify_admin_of_new_provider(
+                                organization,
+                                request,
+                            )
+                        )
 
                 elif active_step == "location":
                     location = form.save(
@@ -416,23 +505,24 @@ def provider_account_view(request):
                 .get(pk=organization.pk)
             )
 
-            updated_completion = _provider_account_completion(
-                updated_organization
+            updated_completion = (
+                _provider_account_completion(
+                    updated_organization
+                )
             )
 
             now_complete = all(
                 updated_completion.values()
             )
 
-            # IMPORTANT:
-            # Do NOT automatically activate the provider when the form
-            # is complete. The administrator must approve it first.
-
+            # Never automatically activate a new provider.
+            # Administrator approval is required.
             if not organization.is_active:
                 messages.success(
                     request,
-                    "Your provider information has been submitted "
-                    "and is awaiting administrator review.",
+                    "Your provider information has been "
+                    "submitted and is awaiting administrator "
+                    "review.",
                 )
             else:
                 messages.success(
