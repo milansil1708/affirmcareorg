@@ -157,112 +157,98 @@ def contains_any_term(text, terms):
     return any(term in text for term in terms)
 
 
-def is_relevant_story(title, description, category):
+def relevance_score(title, description, category):
     title_text = f" {title} ".casefold()
     full_text = f" {title} {description} ".casefold()
 
-    title_is_relevant = contains_any_term(
-        title_text,
-        CORE_RELEVANCE_TERMS,
+    score = 0
+
+    strong_terms = (
+        "gender-affirming care",
+        "gender affirming care",
+        "transgender healthcare",
+        "transgender health care",
+        "transgender health",
+        "trans health",
+        "gender-affirming healthcare",
+        "gender affirming healthcare",
     )
 
-    full_text_is_relevant = contains_any_term(
-        full_text,
-        CORE_RELEVANCE_TERMS,
+    core_terms = (
+        "transgender",
+        "gender-affirming",
+        "gender affirming",
+        "nonbinary",
+        "non-binary",
+        "gender identity",
+        "gender dysphoria",
+        "gender-diverse",
+        "gender diverse",
     )
 
-    # Reject anything that has no clear AffirmCare relevance at all.
-    if not full_text_is_relevant:
-        return False
+    broader_terms = (
+        "lgbtq health",
+        "lgbtq+ health",
+        "lgbtq healthcare",
+        "lgbtq+ healthcare",
+        "lgbtq",
+        "lgbtq+",
+    )
 
-    # Latest News can include any clearly relevant AffirmCare story.
-    if category == "Latest News":
-        return True
+    for term in strong_terms:
+        if term in title_text:
+            score += 12
+        elif term in full_text:
+            score += 8
 
-    category_terms = CATEGORY_RELEVANCE_TERMS.get(
+    for term in core_terms:
+        if term in title_text:
+            score += 7
+        elif term in full_text:
+            score += 4
+
+    for term in broader_terms:
+        if term in title_text:
+            score += 3
+        elif term in full_text:
+            score += 1
+
+    category_terms = CATEGORY_RELEVANCE_TERMS.get(category, ())
+
+    if contains_any_term(title_text, category_terms):
+        score += 4
+    elif contains_any_term(full_text, category_terms):
+        score += 2
+
+    # Generic LGBTQ lifestyle/travel/entertainment stories should
+    # not become AffirmCare news just because they mention LGBTQ.
+    off_topic_terms = (
+        "resort",
+        "travel",
+        "vacation",
+        "hotel",
+        "entertainment",
+        "fashion",
+        "concert",
+        "music festival",
+        "tourism",
+    )
+
+    if contains_any_term(full_text, off_topic_terms):
+        score -= 6
+
+    return score
+
+
+def is_relevant_story(title, description, category):
+    score = relevance_score(
+        title,
+        description,
         category,
-        (),
     )
 
-    category_matches = contains_any_term(
-        full_text,
-        category_terms,
-    )
-
-    # If the headline itself clearly identifies the story as relevant,
-    # be more forgiving about Cision's category metadata/description.
-    if title_is_relevant:
-        return True
-
-    # Otherwise require both core relevance and section relevance.
-    return category_matches
-
-
-def clean_text(value):
-    if not value:
-        return ""
-
-    value = unescape(value)
-
-    value = re.sub(
-        r"<[^>]+>",
-        " ",
-        value,
-    )
-
-    value = re.sub(
-        r"\s+",
-        " ",
-        value,
-    )
-
-    return value.strip()
-
-
-def clean_url(value):
-    """
-    Clean RSS article URLs so malformed trailing characters
-    such as '"/' are removed.
-    """
-    if not value:
-        return ""
-
-    value = unescape(value).strip()
-
-    # Remove surrounding quotation marks if present.
-    value = value.strip('"').strip("'").strip()
-
-    # Remove a stray trailing slash after a quotation mark
-    # or a trailing slash after a PRNewswire .html URL.
-    value = re.sub(
-        r'(["\']?)/$',
-        "",
-        value,
-    )
-
-    # Remove any remaining surrounding quotation marks.
-    value = value.strip('"').strip("'").strip()
-
-    return value
-
-
-def extract_tag(block, tag):
-    pattern = (
-        rf"<{tag}(?:\s[^>]*)?>"
-        rf"(.*?)"
-        rf"</{tag}>"
-    )
-
-    match = re.search(
-        pattern,
-        block,
-        flags=re.IGNORECASE | re.DOTALL,
-    )
-
-    if not match:
-        return ""
-
-    return match.group(1).strip()
+    # Require meaningful relevance to AffirmCare.
+    return score >= 6
 
 
 def fetch_news_feed(url, category, limit=6):
@@ -353,7 +339,7 @@ def get_news_sections():
 
     for category, url in NEWS_FEEDS.items():
         cache_key = (
-            "affirmcare_news_v8_"
+            "affirmcare_news_v9_"
             f"{category.lower().replace(' ', '_')}"
         )
 
