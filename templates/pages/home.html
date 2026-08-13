@@ -147,40 +147,11 @@
       </div>
     </div>
 
-    <div class="container mt-5">
-      {% if featured_providers %}
-      <h2 class="text-center mb-4">Featured Providers</h2>
-      <div class="featured-carousel-wrap">
-      <div class="owl-carousel featured-providers-carousel">
-        {% for provider in featured_providers %}
-        <div class="item">
-          <div class="search-result-card featured-provider-card">
-            <h4 class="search-result-title"><a href="{% url 'provider_detail' provider.slug %}" class="provider-card-link">{{ provider.name }}</a></h4>
-            <p class="search-result-services">
-              {% for org_service in provider.services.all %}
-              {{ org_service.service.name }}{% if not forloop.last %}, {% endif %}
-              {% empty %}
-              Services not listed
-              {% endfor %}
-            </p>
-            {% if provider.locations.first %}
-            <p class="search-result-meta"><i class="fa-solid fa-location-dot"></i>{{ provider.locations.first.city }}, {{ provider.locations.first.state_code }}</p>
-              {% endif %}
-            {% if provider.phone %}
-            <p class="search-result-meta mb-0"><i class="fa-solid fa-phone"></i><a href="tel:{{ provider.phone|cut:'-'|cut:' '|cut:'('|cut:')' }}">{{ provider.phone }}</a></p>
-            {% endif %}
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-      </div>
-      {% endif %}
-
-      {% if is_search %}
-      {% include "components/provider_results.html" %}
-      {% endif %}
-    </div>
-  </div>
+   <div class="container mt-5">
+  {% if is_search %}
+  {% include "components/provider_results.html" %}
+  {% endif %}
+</div>
 
   <div class="section who-we-are-section">
       <div class="container">
