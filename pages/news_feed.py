@@ -194,6 +194,49 @@ CATEGORY_RELEVANCE_TERMS = {
 }
 
 
+
+def clean_text(value):
+    if not value:
+        return ""
+
+    value = unescape(value)
+
+    value = re.sub(
+        r"<[^>]+>",
+        " ",
+        value,
+    )
+
+    value = re.sub(
+        r"\s+",
+        " ",
+        value,
+    )
+
+    return value.strip()
+
+
+def clean_url(value):
+    if not value:
+        return ""
+
+    value = unescape(value).strip()
+
+    # Remove surrounding quotes.
+    value = value.strip('"').strip("'").strip()
+
+    # Remove malformed trailing slash/quote combinations.
+    value = re.sub(
+        r'(["\']?)/$',
+        "",
+        value,
+    )
+
+    value = value.strip('"').strip("'").strip()
+
+    return value
+
+
 def contains_any_term(text, terms):
     return any(term in text for term in terms)
 
