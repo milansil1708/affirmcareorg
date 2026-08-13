@@ -364,6 +364,9 @@ class Command(BaseCommand):
                 resource_type = (row.get("resource_type") or "").strip()
                 city = (row.get("city") or "").strip()
                 state = self.normalize_state(row.get("state"))
+                address_line1 = (row.get("address_line1") or "").strip()
+                address_line2 = (row.get("address_line2") or "").strip()
+                zip_code = (row.get("zip_code") or "").strip()
 
 
                 services_text = (row.get("services") or "").strip()
@@ -429,10 +432,10 @@ class Command(BaseCommand):
                 if state:
                     location_lookup = {
                         "organization": organization,
-                        "address_line1": "",
+                        "address_line1": address_line1,
                         "city": city,
                         "state_code": state,
-                        "zip_code": "",
+                        "zip_code": zip_code,
                     }
 
                     if dry_run:
@@ -448,6 +451,7 @@ class Command(BaseCommand):
                         _, location_created = ProviderLocation.objects.get_or_create(
                             **location_lookup,
                             defaults={
+                                "address_line2": address_line2 or None,
                                 "is_primary": not organization.locations.exists(),
                             },
                         )
