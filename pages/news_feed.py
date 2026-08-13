@@ -15,6 +15,47 @@ NEWS_FEEDS = {
 }
 
 
+FALLBACK_FEEDS = {
+    "Latest News": (
+        "https://news.google.com/rss/search?"
+        "q=%28transgender+OR+%22gender-affirming%22%29+"
+        "%28health+OR+healthcare+OR+policy+OR+rights%29"
+        "&hl=en-US&gl=US&ceid=US:en"
+    ),
+    "Policy & Legislation": (
+        "https://news.google.com/rss/search?"
+        "q=%28transgender+OR+%22gender-affirming%22%29+"
+        "%28law+OR+legislation+OR+policy+OR+court+OR+Medicaid%29"
+        "&hl=en-US&gl=US&ceid=US:en"
+    ),
+    "Research": (
+        "https://news.google.com/rss/search?"
+        "q=%28transgender+OR+%22gender-affirming%22%29+"
+        "%28research+OR+study+OR+findings+OR+journal%29"
+        "&hl=en-US&gl=US&ceid=US:en"
+    ),
+    "Education": (
+        "https://news.google.com/rss/search?"
+        "q=%28transgender+OR+%22gender+identity%22%29+"
+        "%28school+OR+education+OR+student+OR+university%29"
+        "&hl=en-US&gl=US&ceid=US:en"
+    ),
+    "Healthcare": (
+        "https://news.google.com/rss/search?"
+        "q=%28transgender+OR+%22gender-affirming%22%29+"
+        "%28healthcare+OR+health+OR+medical+OR+patient+OR+clinic%29"
+        "&hl=en-US&gl=US&ceid=US:en"
+    ),
+    "AI & Health Care": (
+        "https://news.google.com/rss/search?"
+        "q=%28transgender+OR+%22gender-affirming%22%29+"
+        "%28%22artificial+intelligence%22+OR+AI+OR+%22machine+learning%22%29+"
+        "%28health+OR+healthcare+OR+medical%29"
+        "&hl=en-US&gl=US&ceid=US:en"
+    ),
+}
+
+
 CORE_RELEVANCE_TERMS = (
     "transgender",
     "gender-affirming",
@@ -339,7 +380,7 @@ def get_news_sections():
 
     for category, url in NEWS_FEEDS.items():
         cache_key = (
-            "affirmcare_news_v9_"
+            "affirmcare_news_v10_"
             f"{category.lower().replace(' ', '_')}"
         )
 
@@ -347,6 +388,46 @@ def get_news_sections():
 
         if stories is None:
             stories = fetch_news_feed(url, category)
+
+            # If Cision does not provide enough genuinely relevant
+            # stories, supplement the section with a tightly targeted
+            # fallback news feed.
+            if len(stories) < 3:
+                fallback_url = FALLBACK_FEEDS.get(category)
+
+                if fallback_url:
+                    fallback_stories = fetch_news_feed(
+                        fallback_url,
+                        category,
+                        limit=6,
+                    )
+
+                    existing_links = {
+                        story["link"]
+                        for story in stories
+                    }
+
+                    existing_titles = {
+                        story["title"].casefold()
+                        for story in stories
+                    }
+
+                    for story in fallback_stories:
+                        if story["link"] in existing_links:
+                            continue
+
+                        if story["title"].casefold() in existing_titles:
+                            continue
+
+                        stories.append(story)
+                        existing_links.add(story["link"])
+                        existing_titles.add(
+                            story["title"].casefold()
+                        )
+
+                        if len(stories) >= 6:
+                            break
+
             cache.set(
                 cache_key,
                 stories,
