@@ -59,6 +59,7 @@ def _provider_account_completion(organization):
             "services": False,
             "features": False,
         }
+
     return {
         "organization": True,
         "location": organization.account_has_location,
@@ -76,9 +77,12 @@ def provider_detail_view(request, slug):
     provider_services = list(provider.services.all())
     provider_locations = list(provider.locations.all())
     primary_location = provider_locations[0] if provider_locations else None
+
     if primary_location:
         if primary_location.latitude and primary_location.longitude:
-            map_query = f"{primary_location.latitude},{primary_location.longitude}"
+            map_query = (
+                f"{primary_location.latitude},{primary_location.longitude}"
+            )
         else:
             full_address = ", ".join(
                 filter(
@@ -93,11 +97,18 @@ def provider_detail_view(request, slug):
                 )
             )
             map_query = full_address
-        map_embed_url = f"https://www.google.com/maps?q={quote_plus(map_query)}&output=embed"
+
+        map_embed_url = (
+            f"https://www.google.com/maps?q="
+            f"{quote_plus(map_query)}&output=embed"
+        )
     else:
         map_embed_url = None
 
-    provider_service_ids = {service.service_id for service in provider_services}
+    provider_service_ids = {
+        service.service_id for service in provider_services
+    }
+
     similar_queryset = (
         public_provider_card_queryset()
         .filter(
@@ -112,15 +123,18 @@ def provider_detail_view(request, slug):
         )
         .order_by("-shared_service_count", "name", "id")[:12]
     )
+
     similar_providers = list(similar_queryset)
 
     offers_telehealth = any(
         service.delivery_mode in {"telehealth", "both"}
         for service in provider_services
     )
+
     current_claim = None
     pending_claim = None
     claimant_has_other_organization = False
+
     if request.user.is_authenticated and provider.user_id is None:
         pending_claim = (
             request.user.provider_claim_requests.filter(
@@ -129,10 +143,14 @@ def provider_detail_view(request, slug):
             .select_related("organization")
             .first()
         )
+
         if pending_claim and pending_claim.organization_id == provider.id:
             current_claim = pending_claim
+
         claimant_has_other_organization = (
-            request.user.provider_organizations.exclude(pk=provider.pk).exists()
+            request.user.provider_organizations
+            .exclude(pk=provider.pk)
+            .exists()
         )
 
     context = {
@@ -148,7 +166,12 @@ def provider_detail_view(request, slug):
             reverse("provider_detail", args=(provider.slug,))
         ),
     }
-    return render(request, "pages/provider_detail.html", context)
+
+    return render(
+        request,
+        "pages/provider_detail.html",
+        context,
+    )
 
 
 @login_required
@@ -164,14 +187,22 @@ def claim_provider_organization_view(request, slug):
             request,
             "This organization has already been claimed.",
         )
-        return redirect("provider_detail", slug=provider.slug)
+        return redirect(
+            "provider_detail",
+            slug=provider.slug,
+        )
 
-    if request.user.provider_organizations.exclude(pk=provider.pk).exists():
+    if request.user.provider_organizations.exclude(
+        pk=provider.pk
+    ).exists():
         messages.error(
             request,
             "Your account already manages a provider organization.",
         )
-        return redirect("provider_detail", slug=provider.slug)
+        return redirect(
+            "provider_detail",
+            slug=provider.slug,
+        )
 
     pending_claim = (
         request.user.provider_claim_requests.filter(
@@ -180,6 +211,7 @@ def claim_provider_organization_view(request, slug):
         .select_related("organization")
         .first()
     )
+
     if pending_claim:
         if pending_claim.organization_id == provider.pk:
             messages.info(
@@ -190,10 +222,15 @@ def claim_provider_organization_view(request, slug):
             messages.error(
                 request,
                 "You already have a pending claim for "
-                f"{pending_claim.organization.name}. Wait for an administrator "
-                "decision before claiming another organization.",
+                f"{pending_claim.organization.name}. Wait for an "
+                "administrator decision before claiming another "
+                "organization.",
             )
-        return redirect("provider_detail", slug=provider.slug)
+
+        return redirect(
+            "provider_detail",
+            slug=provider.slug,
+        )
 
     try:
         claim = ProviderOrganizationClaim.objects.create(
@@ -201,28 +238,51 @@ def claim_provider_organization_view(request, slug):
             claimant=request.user,
             claimant_email=request.user.email,
         )
+
     except IntegrityError:
-        pending_claim = ProviderOrganizationClaim.objects.filter(
-            claimant=request.user,
-            status=ProviderOrganizationClaim.Status.PENDING,
-        ).select_related("organization").first()
-        if pending_claim and pending_claim.organization_id == provider.pk:
-            message = "You already have a pending claim for this organization."
+        pending_claim = (
+            ProviderOrganizationClaim.objects.filter(
+                claimant=request.user,
+                status=ProviderOrganizationClaim.Status.PENDING,
+            )
+            .select_related("organization")
+            .first()
+        )
+
+        if (
+            pending_claim
+            and pending_claim.organization_id == provider.pk
+        ):
+            message = (
+                "You already have a pending claim for this organization."
+            )
         else:
             message = (
-                "You already have a pending claim. Wait for an administrator "
-                "decision before claiming another organization."
+                "You already have a pending claim. Wait for an "
+                "administrator decision before claiming another "
+                "organization."
             )
-        messages.error(request, message)
-        return redirect("provider_detail", slug=provider.slug)
 
-    transaction.on_commit(lambda: notify_admin_of_claim(claim, request))
+        messages.error(request, message)
+
+        return redirect(
+            "provider_detail",
+            slug=provider.slug,
+        )
+
+    transaction.on_commit(
+        lambda: notify_admin_of_claim(claim, request)
+    )
+
     messages.success(
         request,
         "Your claim request was submitted for administrator review.",
     )
 
-    return redirect("provider_detail", slug=provider.slug)
+    return redirect(
+        "provider_detail",
+        slug=provider.slug,
+    )
 
 
 @login_required
@@ -233,6 +293,7 @@ def provider_account_view(request):
         .order_by("pk")
         .first()
     )
+
     primary_location = (
         organization.locations.order_by("-is_primary", "pk").first()
         if organization
@@ -241,17 +302,37 @@ def provider_account_view(request):
 
     completion = _provider_account_completion(organization)
     is_complete = all(completion.values())
+
     first_incomplete = next(
-        (key for key, _, _ in ACCOUNT_STEPS if not completion[key]),
+        (
+            key
+            for key, _, _ in ACCOUNT_STEPS
+            if not completion[key]
+        ),
         "organization",
     )
 
-    requested_step = request.POST.get("step") or request.GET.get("step")
-    step_keys = [key for key, _, _ in ACCOUNT_STEPS]
-    active_step = requested_step if requested_step in step_keys else first_incomplete
+    requested_step = (
+        request.POST.get("step")
+        or request.GET.get("step")
+    )
+
+    step_keys = [
+        key
+        for key, _, _ in ACCOUNT_STEPS
+    ]
+
+    active_step = (
+        requested_step
+        if requested_step in step_keys
+        else first_incomplete
+    )
 
     if not is_complete:
-        first_incomplete_index = step_keys.index(first_incomplete)
+        first_incomplete_index = step_keys.index(
+            first_incomplete
+        )
+
         if step_keys.index(active_step) > first_incomplete_index:
             active_step = first_incomplete
 
@@ -263,17 +344,20 @@ def provider_account_view(request):
             request.POST or None,
             instance=organization,
         )
+
     elif active_step == "location":
         form = ProviderLocationForm(
             request.POST or None,
             instance=primary_location,
         )
+
     elif active_step == "services":
         service_formset = OrganizationServiceFormSet(
             request.POST or None,
             instance=organization,
             prefix="services",
         )
+
     else:
         form = ProviderFeatureSelectionForm(
             request.POST or None,
@@ -281,50 +365,114 @@ def provider_account_view(request):
         )
 
     if request.method == "POST":
-        is_valid = service_formset.is_valid() if service_formset else form.is_valid()
+        is_valid = (
+            service_formset.is_valid()
+            if service_formset
+            else form.is_valid()
+        )
+
         if is_valid:
             with transaction.atomic():
+
                 if active_step == "organization":
                     is_new_organization = organization is None
-                    organization = form.save(commit=False)
+
+                    organization = form.save(
+                        commit=False
+                    )
+
                     organization.user = request.user
+
+                    # New provider submissions ALWAYS start inactive.
+                    # They must be reviewed and approved by an administrator.
                     if is_new_organization:
                         organization.is_active = False
+
                     organization.save()
+
                 elif active_step == "location":
-                    location = form.save(commit=False)
+                    location = form.save(
+                        commit=False
+                    )
+
                     location.organization = organization
                     location.is_primary = True
                     location.save()
-                    organization.locations.exclude(pk=location.pk).update(
+
+                    organization.locations.exclude(
+                        pk=location.pk
+                    ).update(
                         is_primary=False
                     )
+
                 elif active_step == "services":
                     service_formset.save()
+
                 else:
                     form.save()
 
-            updated_organization = _provider_account_queryset().get(pk=organization.pk)
-            updated_completion = _provider_account_completion(updated_organization)
-            now_complete = all(updated_completion.values())
-            if now_complete and not organization.is_active:
-                organization.is_active = True
-                organization.save(update_fields=("is_active",))
-            messages.success(request, "Your provider account has been saved.")
+            updated_organization = (
+                _provider_account_queryset()
+                .get(pk=organization.pk)
+            )
+
+            updated_completion = _provider_account_completion(
+                updated_organization
+            )
+
+            now_complete = all(
+                updated_completion.values()
+            )
+
+            # IMPORTANT:
+            # Do NOT automatically activate the provider when the form
+            # is complete. The administrator must approve it first.
+
+            if not organization.is_active:
+                messages.success(
+                    request,
+                    "Your provider information has been submitted "
+                    "and is awaiting administrator review.",
+                )
+            else:
+                messages.success(
+                    request,
+                    "Your provider account has been saved.",
+                )
 
             if is_complete or now_complete:
-                return redirect(f"{reverse('provider_account')}?step={active_step}")
+                return redirect(
+                    f"{reverse('provider_account')}"
+                    f"?step={active_step}"
+                )
 
-            current_index = step_keys.index(active_step)
-            next_step = step_keys[current_index + 1]
-            return redirect(f"{reverse('provider_account')}?step={next_step}")
+            current_index = step_keys.index(
+                active_step
+            )
 
-        messages.error(request, "Please correct the errors below and try again.")
+            next_step = step_keys[
+                current_index + 1
+            ]
+
+            return redirect(
+                f"{reverse('provider_account')}"
+                f"?step={next_step}"
+            )
+
+        messages.error(
+            request,
+            "Please correct the errors below and try again.",
+        )
 
     step_items = []
-    first_incomplete_index = step_keys.index(first_incomplete)
+
+    first_incomplete_index = step_keys.index(
+        first_incomplete
+    )
+
     for key, title, subtitle in ACCOUNT_STEPS:
         index = step_keys.index(key)
+
         step_items.append(
             {
                 "key": key,
@@ -332,12 +480,22 @@ def provider_account_view(request):
                 "subtitle": subtitle,
                 "complete": completion[key],
                 "active": key == active_step,
-                "available": is_complete or index <= first_incomplete_index,
+                "available": (
+                    is_complete
+                    or index <= first_incomplete_index
+                ),
             }
         )
 
-    active_index = step_keys.index(active_step)
-    previous_step = step_keys[active_index - 1] if active_index > 0 else None
+    active_index = step_keys.index(
+        active_step
+    )
+
+    previous_step = (
+        step_keys[active_index - 1]
+        if active_index > 0
+        else None
+    )
 
     return render(
         request,
