@@ -19,7 +19,9 @@ class ClaimDecisionError(Exception):
 def _send_email(subject, message, recipients):
     recipients = [email for email in recipients if email]
     if not recipients:
-        logger.warning("Provider claim email skipped because no recipient is configured.")
+        logger.warning(
+            "Provider email skipped because no recipient is configured."
+        )
         return
 
     try:
@@ -31,7 +33,53 @@ def _send_email(subject, message, recipients):
             fail_silently=False,
         )
     except Exception:
-        logger.exception("Provider claim email could not be sent.")
+        logger.exception("Provider email could not be sent.")
+
+
+def notify_admin_of_provider_submission(
+    organization,
+    request=None,
+):
+    """
+    Notify the administrator that a new provider organization
+    has been submitted and is waiting for approval.
+    """
+
+    admin_url = ""
+
+    if request:
+        admin_path = reverse(
+            "admin:provider_organizations_providerorganization_change",
+            args=(organization.pk,),
+        )
+        admin_url = request.build_absolute_uri(admin_path)
+
+    message = (
+        "A new provider organization has been submitted "
+        "and requires your review.\n\n"
+        f"Organization: {organization.name}\n"
+        f"Submitted by user ID: {organization.user_id}\n"
+        f"Website: {organization.website_url or 'Not provided'}\n"
+        f"Phone: {organization.phone or 'Not provided'}\n"
+        f"Email: {organization.email or 'Not provided'}\n"
+        f"Submitted: {timezone.now():%Y-%m-%d %H:%M UTC}\n"
+    )
+
+    if admin_url:
+        message += f"\nReview provider: {admin_url}\n"
+
+    _send_email(
+        f"New provider submission: {organization.name}",
+        message,
+        [
+            getattr(
+                settings,
+                "CLAIM_ADMIN_EMAIL",
+                None,
+            )
+            or settings.EMAIL_HOST_USER
+        ],
+    )
 
 
 def notify_admin_of_claim(claim, request=None):
@@ -50,32 +98,43 @@ def notify_admin_of_claim(claim, request=None):
         f"Claimant: {claim.claimant_email}\n"
         f"Submitted: {claim.created_at:%Y-%m-%d %H:%M UTC}\n"
     )
+
     if admin_url:
         message += f"\nReview claim: {admin_url}\n"
 
     _send_email(
         f"Provider claim request: {claim.organization.name}",
         message,
-        [settings.CLAIM_ADMIN_EMAIL or settings.EMAIL_HOST_USER],
+        [
+            settings.CLAIM_ADMIN_EMAIL
+            or settings.EMAIL_HOST_USER
+        ],
     )
 
 
 def notify_claimant_of_decision(claim):
     if claim.status == ProviderOrganizationClaim.Status.APPROVED:
-        subject = f"Your claim for {claim.organization.name} was approved"
+        subject = (
+            f"Your claim for {claim.organization.name} was approved"
+        )
         decision = (
-            "Your claim was approved. The organization is now connected to your "
-            "Affirm Care account, and you can manage it from the Account page."
+            "Your claim was approved. The organization is now connected "
+            "to your Affirm Care account, and you can manage it from "
+            "the Account page."
         )
     else:
-        subject = f"Update on your claim for {claim.organization.name}"
+        subject = (
+            f"Update on your claim for {claim.organization.name}"
+        )
         decision = (
-            "Your claim was not approved. The organization has not been connected "
-            "to your account."
+            "Your claim was not approved. The organization has not "
+            "been connected to your account."
         )
 
     if claim.admin_note:
-        decision += f"\n\nAdministrator note:\n{claim.admin_note}"
+        decision += (
+            f"\n\nAdministrator note:\n{claim.admin_note}"
+        )
 
     _send_email(
         subject,
@@ -84,42 +143,75 @@ def notify_claimant_of_decision(claim):
     )
 
 
-def approve_claim(claim_id, reviewer, admin_note=""):
+def approve_claim(
+    claim_id,
+    reviewer,
+    admin_note="",
+):
     with transaction.atomic():
         claim = (
             ProviderOrganizationClaim.objects.select_for_update()
             .select_related("organization")
             .get(pk=claim_id)
         )
-        organization = ProviderOrganization.objects.select_for_update().get(
-            pk=claim.organization_id
+
+        organization = (
+            ProviderOrganization.objects.select_for_update().get(
+                pk=claim.organization_id
+            )
         )
 
         if claim.status != ProviderOrganizationClaim.Status.PENDING:
-            raise ClaimDecisionError("Only pending claims can be approved.")
+            raise ClaimDecisionError(
+                "Only pending claims can be approved."
+            )
+
         if claim.claimant is None:
-            raise ClaimDecisionError("The claimant account no longer exists.")
-        if organization.user_id and organization.user_id != claim.claimant_id:
-            raise ClaimDecisionError("This organization already has an owner.")
+            raise ClaimDecisionError(
+                "The claimant account no longer exists."
+            )
+
         if (
-            ProviderOrganization.objects.filter(user=claim.claimant)
+            organization.user_id
+            and organization.user_id != claim.claimant_id
+        ):
+            raise ClaimDecisionError(
+                "This organization already has an owner."
+            )
+
+        if (
+            ProviderOrganization.objects.filter(
+                user=claim.claimant
+            )
             .exclude(pk=organization.pk)
             .exists()
         ):
             raise ClaimDecisionError(
-                "The claimant already manages another provider organization."
+                "The claimant already manages another provider "
+                "organization."
             )
 
         organization.user = claim.claimant
-        organization.save(update_fields=("user",))
+        organization.save(
+            update_fields=("user",)
+        )
 
         reviewed_at = timezone.now()
-        claim.status = ProviderOrganizationClaim.Status.APPROVED
+
+        claim.status = (
+            ProviderOrganizationClaim.Status.APPROVED
+        )
         claim.reviewed_by = reviewer
         claim.reviewed_at = reviewed_at
         claim.admin_note = admin_note
+
         claim.save(
-            update_fields=("status", "reviewed_by", "reviewed_at", "admin_note")
+            update_fields=(
+                "status",
+                "reviewed_by",
+                "reviewed_at",
+                "admin_note",
+            )
         )
 
         competing_claims = list(
@@ -130,13 +222,17 @@ def approve_claim(claim_id, reviewer, admin_note=""):
             )
             .exclude(pk=claim.pk)
         )
+
         for competing_claim in competing_claims:
-            competing_claim.status = ProviderOrganizationClaim.Status.REJECTED
+            competing_claim.status = (
+                ProviderOrganizationClaim.Status.REJECTED
+            )
             competing_claim.reviewed_by = reviewer
             competing_claim.reviewed_at = reviewed_at
             competing_claim.admin_note = (
                 "Another claim for this organization was approved."
             )
+
             competing_claim.save(
                 update_fields=(
                     "status",
@@ -146,10 +242,14 @@ def approve_claim(claim_id, reviewer, admin_note=""):
                 )
             )
 
-        transaction.on_commit(lambda: notify_claimant_of_decision(claim))
+        transaction.on_commit(
+            lambda: notify_claimant_of_decision(claim)
+        )
+
         for competing_claim in competing_claims:
             transaction.on_commit(
-                lambda rejected_claim=competing_claim: notify_claimant_of_decision(
+                lambda rejected_claim=competing_claim:
+                notify_claimant_of_decision(
                     rejected_claim
                 )
             )
@@ -157,19 +257,40 @@ def approve_claim(claim_id, reviewer, admin_note=""):
     return claim
 
 
-def reject_claim(claim_id, reviewer, admin_note=""):
+def reject_claim(
+    claim_id,
+    reviewer,
+    admin_note="",
+):
     with transaction.atomic():
-        claim = ProviderOrganizationClaim.objects.select_for_update().get(pk=claim_id)
-        if claim.status != ProviderOrganizationClaim.Status.PENDING:
-            raise ClaimDecisionError("Only pending claims can be rejected.")
+        claim = (
+            ProviderOrganizationClaim.objects.select_for_update()
+            .get(pk=claim_id)
+        )
 
-        claim.status = ProviderOrganizationClaim.Status.REJECTED
+        if claim.status != ProviderOrganizationClaim.Status.PENDING:
+            raise ClaimDecisionError(
+                "Only pending claims can be rejected."
+            )
+
+        claim.status = (
+            ProviderOrganizationClaim.Status.REJECTED
+        )
         claim.reviewed_by = reviewer
         claim.reviewed_at = timezone.now()
         claim.admin_note = admin_note
+
         claim.save(
-            update_fields=("status", "reviewed_by", "reviewed_at", "admin_note")
+            update_fields=(
+                "status",
+                "reviewed_by",
+                "reviewed_at",
+                "admin_note",
+            )
         )
-        transaction.on_commit(lambda: notify_claimant_of_decision(claim))
+
+        transaction.on_commit(
+            lambda: notify_claimant_of_decision(claim)
+        )
 
     return claim
