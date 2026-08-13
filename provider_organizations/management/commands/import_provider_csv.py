@@ -14,6 +14,74 @@ from provider_organizations.models import (
 
 
 class Command(BaseCommand):
+    STATE_CODES = {
+        "Alabama": "AL",
+        "Alaska": "AK",
+        "Arizona": "AZ",
+        "Arkansas": "AR",
+        "California": "CA",
+        "Colorado": "CO",
+        "Connecticut": "CT",
+        "Delaware": "DE",
+        "District of Columbia": "DC",
+        "Florida": "FL",
+        "Georgia": "GA",
+        "Hawaii": "HI",
+        "Idaho": "ID",
+        "Illinois": "IL",
+        "Indiana": "IN",
+        "Iowa": "IA",
+        "Kansas": "KS",
+        "Kentucky": "KY",
+        "Louisiana": "LA",
+        "Maine": "ME",
+        "Maryland": "MD",
+        "Massachusetts": "MA",
+        "Michigan": "MI",
+        "Minnesota": "MN",
+        "Mississippi": "MS",
+        "Missouri": "MO",
+        "Montana": "MT",
+        "Nebraska": "NE",
+        "Nevada": "NV",
+        "New Hampshire": "NH",
+        "New Jersey": "NJ",
+        "New Mexico": "NM",
+        "New York": "NY",
+        "North Carolina": "NC",
+        "North Dakota": "ND",
+        "Ohio": "OH",
+        "Oklahoma": "OK",
+        "Oregon": "OR",
+        "Pennsylvania": "PA",
+        "Rhode Island": "RI",
+        "South Carolina": "SC",
+        "South Dakota": "SD",
+        "Tennessee": "TN",
+        "Texas": "TX",
+        "Utah": "UT",
+        "Vermont": "VT",
+        "Virginia": "VA",
+        "Washington": "WA",
+        "West Virginia": "WV",
+        "Wisconsin": "WI",
+        "Wyoming": "WY",
+    }
+
+    def normalize_state(self, value):
+        value = (value or "").strip()
+        if not value:
+            return ""
+
+        if len(value) == 2:
+            return value.upper()
+
+        for name, code in self.STATE_CODES.items():
+            if value.casefold() == name.casefold():
+                return code
+
+        return value
+
     help = "Import provider organizations from a CSV file safely without duplicates."
 
     def add_arguments(self, parser):
@@ -129,12 +197,8 @@ class Command(BaseCommand):
                 website = (row.get("website") or "").strip() or None
                 resource_type = (row.get("resource_type") or "").strip()
                 city = (row.get("city") or "").strip()
-                state = (row.get("state") or "").strip()
+                state = self.normalize_state(row.get("state"))
 
-                if state.lower() == "district of columbia":
-                    state = "DC"
-                elif len(state) == 2:
-                    state = state.upper()
 
                 services_text = (row.get("services") or "").strip()
                 population = (row.get("population") or "").strip()
