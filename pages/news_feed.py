@@ -158,19 +158,44 @@ def contains_any_term(text, terms):
 
 
 def is_relevant_story(title, description, category):
-    text = f" {title} {description} ".casefold()
+    title_text = f" {title} ".casefold()
+    full_text = f" {title} {description} ".casefold()
 
-    # Every article must first be relevant to AffirmCare's core subject.
-    if not contains_any_term(text, CORE_RELEVANCE_TERMS):
+    title_is_relevant = contains_any_term(
+        title_text,
+        CORE_RELEVANCE_TERMS,
+    )
+
+    full_text_is_relevant = contains_any_term(
+        full_text,
+        CORE_RELEVANCE_TERMS,
+    )
+
+    # Reject anything that has no clear AffirmCare relevance at all.
+    if not full_text_is_relevant:
         return False
 
-    # It must also be relevant to the section it appears in.
-    category_terms = CATEGORY_RELEVANCE_TERMS.get(category)
+    # Latest News can include any clearly relevant AffirmCare story.
+    if category == "Latest News":
+        return True
 
-    if category_terms and not contains_any_term(text, category_terms):
-        return False
+    category_terms = CATEGORY_RELEVANCE_TERMS.get(
+        category,
+        (),
+    )
 
-    return True
+    category_matches = contains_any_term(
+        full_text,
+        category_terms,
+    )
+
+    # If the headline itself clearly identifies the story as relevant,
+    # be more forgiving about Cision's category metadata/description.
+    if title_is_relevant:
+        return True
+
+    # Otherwise require both core relevance and section relevance.
+    return category_matches
 
 
 def clean_text(value):
@@ -328,7 +353,7 @@ def get_news_sections():
 
     for category, url in NEWS_FEEDS.items():
         cache_key = (
-            "affirmcare_news_v7_"
+            "affirmcare_news_v8_"
             f"{category.lower().replace(' ', '_')}"
         )
 
