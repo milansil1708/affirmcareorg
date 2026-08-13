@@ -15,6 +15,164 @@ NEWS_FEEDS = {
 }
 
 
+CORE_RELEVANCE_TERMS = (
+    "transgender",
+    "gender-affirming",
+    "gender affirming",
+    "gender-diverse",
+    "gender diverse",
+    "nonbinary",
+    "non-binary",
+    "gender identity",
+    "gender dysphoria",
+    "trans health",
+    "trans healthcare",
+    "trans health care",
+    "transgender health",
+    "transgender healthcare",
+    "transgender health care",
+    "lgbtq health",
+    "lgbtq+ health",
+    "lgbtq healthcare",
+    "lgbtq+ healthcare",
+    "gender-affirming care",
+    "gender affirming care",
+    "gender-affirming healthcare",
+    "gender affirming healthcare",
+    "puberty blockers",
+    "gender-affirming surgery",
+    "gender affirming surgery",
+)
+
+CATEGORY_RELEVANCE_TERMS = {
+    "Latest News": (
+        "health",
+        "healthcare",
+        "health care",
+        "medical",
+        "patient",
+        "hospital",
+        "clinic",
+        "law",
+        "legislation",
+        "policy",
+        "court",
+        "lawsuit",
+        "rights",
+        "insurance",
+        "medicaid",
+        "education",
+        "school",
+        "student",
+        "research",
+        "study",
+    ),
+
+    "Policy & Legislation": (
+        "law",
+        "legislation",
+        "legislature",
+        "bill",
+        "policy",
+        "regulation",
+        "court",
+        "lawsuit",
+        "judge",
+        "ruling",
+        "ban",
+        "restriction",
+        "executive order",
+        "medicaid",
+        "medicare",
+        "insurance",
+        "government",
+    ),
+
+    "Research": (
+        "research",
+        "study",
+        "studies",
+        "survey",
+        "data",
+        "findings",
+        "journal",
+        "clinical study",
+        "clinical trial",
+        "researchers",
+        "scientists",
+        "analysis",
+    ),
+
+    "Education": (
+        "education",
+        "school",
+        "schools",
+        "student",
+        "students",
+        "teacher",
+        "teachers",
+        "college",
+        "university",
+        "campus",
+        "classroom",
+        "curriculum",
+        "school district",
+    ),
+
+    "Healthcare": (
+        "health",
+        "healthcare",
+        "health care",
+        "medical",
+        "medicine",
+        "patient",
+        "patients",
+        "hospital",
+        "clinic",
+        "doctor",
+        "physician",
+        "treatment",
+        "therapy",
+        "surgery",
+        "care",
+        "insurance",
+    ),
+
+    "AI & Health Care": (
+        "artificial intelligence",
+        " ai ",
+        "ai-powered",
+        "ai-enabled",
+        "machine learning",
+        "algorithm",
+        "algorithms",
+        "large language model",
+        "clinical ai",
+        "generative ai",
+    ),
+}
+
+
+def contains_any_term(text, terms):
+    return any(term in text for term in terms)
+
+
+def is_relevant_story(title, description, category):
+    text = f" {title} {description} ".casefold()
+
+    # Every article must first be relevant to AffirmCare's core subject.
+    if not contains_any_term(text, CORE_RELEVANCE_TERMS):
+        return False
+
+    # It must also be relevant to the section it appears in.
+    category_terms = CATEGORY_RELEVANCE_TERMS.get(category)
+
+    if category_terms and not contains_any_term(text, category_terms):
+        return False
+
+    return True
+
+
 def clean_text(value):
     if not value:
         return ""
@@ -82,7 +240,7 @@ def extract_tag(block, tag):
     return match.group(1).strip()
 
 
-def fetch_news_feed(url, limit=6):
+def fetch_news_feed(url, category, limit=6):
     try:
         request = urllib.request.Request(
             url,
@@ -140,6 +298,13 @@ def fetch_news_feed(url, limit=6):
             if not link:
                 continue
 
+            if not is_relevant_story(
+                title,
+                description,
+                category,
+            ):
+                continue
+
             stories.append(
                 {
                     "title": title,
@@ -163,14 +328,14 @@ def get_news_sections():
 
     for category, url in NEWS_FEEDS.items():
         cache_key = (
-            "affirmcare_news_v6_"
+            "affirmcare_news_v7_"
             f"{category.lower().replace(' ', '_')}"
         )
 
         stories = cache.get(cache_key)
 
         if stories is None:
-            stories = fetch_news_feed(url)
+            stories = fetch_news_feed(url, category)
             cache.set(
                 cache_key,
                 stories,
