@@ -182,6 +182,7 @@ class Command(BaseCommand):
                         ),
                         description=description,
                         website_url=website,
+                        phone="",
                         is_active=True,
                         last_verified_at=self.parse_date(last_checked),
                     )
